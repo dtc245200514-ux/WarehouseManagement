@@ -1,0 +1,164 @@
+html {
+  font-size: 14px;
+}
+
+@media (min-width: 768px) {
+  html {
+    font-size: 16px;
+  }
+}
+
+.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
+  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
+}
+
+html {
+  position: relative;
+  min-height: 100%;
+}
+
+body {
+  margin-bottom: 60px;
+  background-color: #f6f8fb;
+}
+
+.account-management .card,
+.category-management .card,
+.product-management .card,
+.supplier-management .card,
+.import-receipt-management .card,
+.export-receipt-management .card {
+  border-radius: 0.85rem;
+}
+
+.account-management .account-summary {
+  min-width: 150px;
+  background: #eef4ff;
+  border: 1px solid #dbe7ff;
+}
+
+.account-management .table thead th,
+.category-management .table thead th,
+.product-management .table thead th,
+.supplier-management .table thead th,
+.import-receipt-management .table thead th,
+.export-receipt-management .table thead th {
+  padding: 1rem;
+  color: #526071;
+  background: #f8fafc;
+  border-bottom-width: 1px;
+  font-size: 0.8rem;
+  letter-spacing: 0.035em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.account-management .table tbody td,
+.category-management .table tbody td,
+.product-management .table tbody td,
+.supplier-management .table tbody td,
+.import-receipt-management .table tbody td,
+.export-receipt-management .table tbody td {
+  padding: 1rem;
+}
+
+.account-management .account-avatar {
+  display: grid;
+  width: 5rem;
+  height: 5rem;
+  place-items: center;
+  color: #fff;
+  background: linear-gradient(135deg, #0d6efd, #5b35d5);
+  border-radius: 1.25rem;
+  font-size: 2rem;
+  font-weight: 700;
+}
+
+.account-management .account-details dt,
+.account-management .account-details dd {
+  padding-top: 0.8rem;
+  padding-bottom: 0.8rem;
+  border-bottom: 1px solid #edf0f4;
+}
+
+.account-management .account-details dt {
+  color: #657184;
+  font-weight: 600;
+}
+
+.supplier-management .supplier-details dt,
+.supplier-management .supplier-details dd {
+  padding-top: 0.8rem;
+  padding-bottom: 0.8rem;
+  border-bottom: 1px solid #edf0f4;
+}
+
+.supplier-management .supplier-details dt {
+  color: #657184;
+  font-weight: 600;
+}
+
+.import-receipt-management .import-receipt-details dt,
+.import-receipt-management .import-receipt-details dd {
+  padding-top: 0.7rem;
+  padding-bottom: 0.7rem;
+  border-bottom: 1px solid #edf0f4;
+}
+
+.import-receipt-management .import-receipt-details dt {
+  color: #657184;
+  font-weight: 600;
+}
+
+.import-receipt-management .detail-index-column,
+.export-receipt-management .detail-index-column {
+  width: 4rem;
+}
+
+.import-receipt-management .product-column,
+.export-receipt-management .product-column {
+  min-width: 20rem;
+}
+
+.import-receipt-management .quantity-input,
+.export-receipt-management .quantity-input,
+.import-receipt-management .unit-cost-input {
+  min-width: 10rem;
+}
+
+.import-receipt-management .detail-validation,
+.export-receipt-management .detail-validation {
+  display: block;
+  max-width: 16rem;
+  margin-top: 0.25rem;
+  font-size: 0.8rem;
+}
+
+.import-receipt-management .editing-detail-row > td,
+.export-receipt-management .editing-detail-row > td {
+  transition: background-color 0.15s ease-in-out;
+}
+
+.form-floating > .form-control-plaintext::placeholder, .form-floating > .form-control::placeholder {
+  color: var(--bs-secondary-color);
+  text-align: end;
+}
+
+.form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
+  text-align: start;
+}
+
+.warehouse-reports .report-bar-track {
+  height: 0.65rem;
+  background: #edf1f5;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.warehouse-reports .report-bar {
+  height: 100%;
+  border-radius: inherit;
+}
+
+.warehouse-reports .report-bar-import { background: #198754; }
+.warehouse-reports .report-bar-export { background: #0d6efd; }

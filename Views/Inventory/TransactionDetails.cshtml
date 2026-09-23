@@ -1,0 +1,57 @@
+@using WarehouseManagement.Authorization
+@using WarehouseManagement.Models.Enums
+@using WarehouseManagement.Models.InventoryManagement
+@model InventoryTransactionListItemViewModel
+
+@functions {
+    private static string TypeText(InventoryTransactionType type) => type switch
+    {
+        InventoryTransactionType.Import => "Nhập kho",
+        InventoryTransactionType.Export => "Xuất kho",
+        InventoryTransactionType.ImportCancellation => "Hủy phiếu nhập",
+        InventoryTransactionType.ExportCancellation => "Hủy phiếu xuất",
+        InventoryTransactionType.AdjustmentIncrease => "Điều chỉnh tăng",
+        InventoryTransactionType.AdjustmentDecrease => "Điều chỉnh giảm",
+        InventoryTransactionType.OpeningBalance => "Tồn đầu kỳ",
+        _ => type.ToString()
+    };
+}
+
+@{
+    ViewData["Title"] = $"Giao dịch #{Model.Id}";
+    var canOpenReceipts = User.IsInRole(ApplicationRoles.Admin) ||
+        User.IsInRole(ApplicationRoles.WarehouseStaff);
+}
+
+<div class="inventory-management">
+    <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
+        <div><h1 class="h3 mb-1">Chi tiết giao dịch #@Model.Id</h1><p class="text-muted mb-0">Bản ghi lịch sử chỉ đọc</p></div>
+        <a asp-action="Transactions" class="btn btn-outline-secondary">Quay lại lịch sử</a>
+    </div>
+
+    <div class="card border-0 shadow-sm"><div class="card-body p-4"><dl class="row mb-0">
+        <dt class="col-md-4">Thời gian</dt><dd class="col-md-8">@Model.OccurredAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm:ss")</dd>
+        <dt class="col-md-4">Hàng hóa</dt><dd class="col-md-8"><a asp-action="Details" asp-route-id="@Model.ProductId">@Model.ProductCode — @Model.ProductName</a></dd>
+        <dt class="col-md-4">Loại giao dịch</dt><dd class="col-md-8">@TypeText(Model.TransactionType)</dd>
+        <dt class="col-md-4">Biến động</dt><dd class="col-md-8 fw-semibold">@Model.QuantityChange.ToString("+0.000;-0.000;0.000") @Model.Unit</dd>
+        <dt class="col-md-4">Tồn trước</dt><dd class="col-md-8">@Model.BalanceBefore.ToString("N3") @Model.Unit</dd>
+        <dt class="col-md-4">Tồn sau</dt><dd class="col-md-8">@Model.BalanceAfter.ToString("N3") @Model.Unit</dd>
+        <dt class="col-md-4">Chứng từ</dt><dd class="col-md-8">
+            @if (Model.ImportReceiptId.HasValue && canOpenReceipts)
+            {
+                <a asp-controller="ImportReceiptManagement" asp-action="Details" asp-route-id="@Model.ImportReceiptId">@Model.ImportReceiptNumber</a>
+            }
+            else if (Model.ExportReceiptId.HasValue && canOpenReceipts)
+            {
+                <a asp-controller="ExportReceiptManagement" asp-action="Details" asp-route-id="@Model.ExportReceiptId">@Model.ExportReceiptNumber</a>
+            }
+            else
+            {
+                @(Model.ImportReceiptNumber ?? Model.ExportReceiptNumber ?? "Không có chứng từ liên kết")
+            }
+        </dd>
+        <dt class="col-md-4">Trạng thái chứng từ</dt><dd class="col-md-8">@(Model.ReceiptStatus switch { ReceiptStatus.Posted => "Đã ghi sổ", ReceiptStatus.Cancelled => "Đã hủy", null => "Không có chứng từ liên kết", _ => "Nháp — cần kiểm tra" })</dd>
+        <dt class="col-md-4">Người thực hiện</dt><dd class="col-md-8">@Model.PerformedByName</dd>
+        <dt class="col-md-4">Ghi chú</dt><dd class="col-md-8">@(Model.Note ?? "—")</dd>
+    </dl></div></div>
+</div>

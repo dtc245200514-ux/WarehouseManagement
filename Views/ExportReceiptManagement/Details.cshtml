@@ -1,0 +1,167 @@
+@using WarehouseManagement.Models.Enums
+@using WarehouseManagement.Models.ExportReceiptManagement
+@model WarehouseManagement.Models.ExportReceiptManagement.ExportReceiptDetailsViewModel
+
+@functions {
+    private static string StatusText(ReceiptStatus status) => status switch
+    {
+        ReceiptStatus.Draft => "Nháp",
+        ReceiptStatus.Posted => "Đã ghi sổ",
+        ReceiptStatus.Cancelled => "Đã hủy",
+        _ => status.ToString()
+    };
+
+    private static string TransactionText(InventoryTransactionType type) => type switch
+    {
+        InventoryTransactionType.Export => "Xuất kho",
+        InventoryTransactionType.ExportCancellation => "Đảo giao dịch xuất",
+        _ => type.ToString()
+    };
+
+    private static string ReconciliationText(ExportReconciliationStatus status) => status switch
+    {
+        ExportReconciliationStatus.Match => "Khớp",
+        ExportReconciliationStatus.Mismatch => "Không khớp",
+        ExportReconciliationStatus.MissingTransaction => "Thiếu giao dịch",
+        ExportReconciliationStatus.DuplicateTransaction => "Giao dịch trùng",
+        ExportReconciliationStatus.InsufficientData => "Không đủ dữ liệu",
+        _ => "Lỗi hệ thống"
+    };
+}
+
+@{
+    ViewData["Title"] = $"Phiếu xuất {Model.ReceiptNumber}";
+}
+
+<div class="export-receipt-management">
+    <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
+        <div>
+            <h1 class="h3 mb-1">Chi tiết phiếu xuất</h1>
+            <p class="text-muted mb-0">@Model.ReceiptNumber</p>
+        </div>
+        <span class="badge @(Model.Status == ReceiptStatus.Posted ? "text-bg-success" : "text-bg-secondary") px-3 py-2">@StatusText(Model.Status)</span>
+    </div>
+
+    @if (TempData["SuccessMessage"] is string successMessage)
+    {
+        <div class="alert alert-success" role="alert">@successMessage</div>
+    }
+    @if (TempData["ErrorMessage"] is string errorMessage)
+    {
+        <div class="alert alert-danger" role="alert">@errorMessage</div>
+    }
+    @if (Model.Status == ReceiptStatus.Draft && Model.PostAvailabilityMessage is not null)
+    {
+        <div class="alert alert-warning" role="alert">
+            Chưa thể ghi sổ: @Model.PostAvailabilityMessage
+        </div>
+    }
+
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body p-4">
+            <dl class="row mb-0">
+                <dt class="col-md-3">Số phiếu</dt><dd class="col-md-9 fw-semibold">@Model.ReceiptNumber</dd>
+                <dt class="col-md-3">Người lập</dt><dd class="col-md-9">@Model.CreatedByName</dd>
+                <dt class="col-md-3">Ngày lập</dt><dd class="col-md-9">@Model.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm:ss")</dd>
+                <dt class="col-md-3">Người ghi sổ</dt><dd class="col-md-9">@(Model.PostedByName ?? "—")</dd>
+                <dt class="col-md-3">Ghi sổ lúc</dt><dd class="col-md-9">@(Model.PostedAt?.ToLocalTime().ToString("dd/MM/yyyy HH:mm:ss") ?? "—")</dd>
+                <dt class="col-md-3">Lý do / ghi chú</dt><dd class="col-md-9">@(Model.Note ?? "—")</dd>
+            </dl>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="table-responsive">
+            <table class="table align-middle mb-0">
+                <thead><tr><th>STT</th><th>Mã hàng</th><th>Tên hàng hóa</th><th>Đơn vị</th><th class="text-end">Số lượng xuất</th><th class="text-end">Tồn hiện tại*</th></tr></thead>
+                <tbody>
+                    @if (Model.Details.Count == 0)
+                    {
+                        <tr><td colspan="6" class="text-center text-muted py-4">Phiếu chưa có chi tiết hàng hóa.</td></tr>
+                    }
+                    @for (var index = 0; index < Model.Details.Count; index++)
+                    {
+                        var detail = Model.Details[index];
+                        <tr>
+                            <td>@(index + 1)</td>
+                            <td class="fw-semibold">@detail.ProductCode</td>
+                            <td>@detail.ProductName</td>
+                            <td>@detail.Unit</td>
+                            <td class="text-end">@detail.Quantity.ToString("N3")</td>
+                            <td class="text-end">@detail.CurrentQuantity.ToString("N3")</td>
+                        </tr>
+                    }
+                    @if (Model.Details.Count > 0)
+                    {
+                        <tr class="table-light fw-semibold"><td colspan="4">Tổng lượng xuất*</td><td class="text-end">@Model.TotalQuantity.ToString("N3")</td><td></td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <p class="small text-muted">* Tổng lượng có thể cộng các đơn vị tính khác nhau. Tồn hiện tại chỉ để tham khảo và có thể đã thay đổi sau khi lập hoặc ghi sổ phiếu. Khi ghi sổ, hệ thống kiểm tra lại tồn trực tiếp trong database.</p>
+
+    @if (Model.Reconciliation is not null)
+    {
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body pb-0">
+                <h2 class="h5">Đối chiếu giao dịch và tồn kho</h2>
+                <p><span class="badge @(Model.Reconciliation.Status == ExportReconciliationStatus.Match ? "text-bg-success" : "text-bg-warning")">@ReconciliationText(Model.Reconciliation.Status)</span> @Model.Reconciliation.Message</p>
+            </div>
+            @if (Model.Reconciliation.Items.Count > 0)
+            {
+                <div class="table-responsive"><table class="table align-middle mb-0">
+                    <thead><tr><th>Mã hàng</th><th class="text-end">Số lượng trên phiếu</th><th class="text-end">Giao dịch xuất</th><th class="text-end">Tồn trước</th><th class="text-end">Tồn sau</th><th class="text-end">Tồn hiện tại</th><th>Kết quả</th></tr></thead>
+                    <tbody>
+                        @foreach (var item in Model.Reconciliation.Items)
+                        {
+                            <tr><td class="fw-semibold">@item.ProductCode</td><td class="text-end">@item.ReceiptQuantity.ToString("N3")</td><td class="text-end">@(item.TransactionQuantityChange?.ToString("N3") ?? "—")</td><td class="text-end">@(item.BalanceBefore?.ToString("N3") ?? "—")</td><td class="text-end">@(item.BalanceAfter?.ToString("N3") ?? "—")</td><td class="text-end">@item.CurrentQuantity.ToString("N3")</td><td><span class="badge @(item.Status == ExportReconciliationStatus.Match ? "text-bg-success" : "text-bg-warning")">@ReconciliationText(item.Status)</span><span class="d-block small text-muted">@item.Message</span></td></tr>
+                        }
+                    </tbody>
+                </table></div>
+            }
+        </div>
+    }
+
+    @if (Model.InventoryTransactions.Count > 0)
+    {
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body pb-0"><h2 class="h5">Lịch sử giao dịch của phiếu</h2></div>
+            <div class="table-responsive">
+                <table class="table align-middle mb-0">
+                    <thead><tr><th>Loại</th><th>Mã hàng</th><th class="text-end">Biến động</th><th class="text-end">Tồn trước</th><th class="text-end">Tồn sau</th><th>Người thực hiện</th><th>Thời gian</th></tr></thead>
+                    <tbody>
+                        @foreach (var transaction in Model.InventoryTransactions)
+                        {
+                            <tr>
+                                <td>@TransactionText(transaction.TransactionType)</td>
+                                <td class="fw-semibold">@transaction.ProductCode</td>
+                                <td class="text-end">@transaction.QuantityChange.ToString("N3")</td>
+                                <td class="text-end">@transaction.BalanceBefore.ToString("N3")</td>
+                                <td class="text-end">@transaction.BalanceAfter.ToString("N3")</td>
+                                <td>@transaction.PerformedByName</td>
+                                <td>@transaction.OccurredAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm:ss")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+
+    <div class="d-flex flex-wrap gap-2">
+        <a asp-action="Index" class="btn btn-outline-secondary">Quay lại danh sách</a>
+        @if (Model.CanPost)
+        {
+            <form asp-action="Post" asp-route-id="@Model.Id" method="post"
+                  onsubmit="return confirm('Ghi sổ phiếu xuất này và trừ tồn kho? Thao tác không thể thực hiện lần hai.');">
+                <input type="hidden" name="rowVersion" value="@Model.RowVersion" />
+                <button type="submit" class="btn btn-success">Ghi sổ phiếu xuất</button>
+            </form>
+        }
+    </div>
+    @if (Model.Status == ReceiptStatus.Draft)
+    {
+        <p class="small text-muted mt-3">Xóa phiếu Nháp tạm thời chưa khả dụng do SQL Server không lập được kế hoạch DELETE. Không có nút xóa để tránh mất dữ liệu ngoài ý muốn.</p>
+    }
+</div>

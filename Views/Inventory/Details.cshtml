@@ -1,0 +1,146 @@
+@using WarehouseManagement.Authorization
+@using WarehouseManagement.Models.Enums
+@using WarehouseManagement.Models.InventoryManagement
+@model InventoryDetailsViewModel
+
+@functions {
+    private static string StockText(StockLevelStatus status) => status switch
+    {
+        StockLevelStatus.OutOfStock => "Hết hàng",
+        StockLevelStatus.LowStock => "Sắp hết",
+        _ => "Còn hàng"
+    };
+
+    private static string TransactionText(InventoryTransactionType type) => type switch
+    {
+        InventoryTransactionType.Import => "Nhập kho",
+        InventoryTransactionType.Export => "Xuất kho",
+        InventoryTransactionType.ImportCancellation => "Hủy phiếu nhập",
+        InventoryTransactionType.ExportCancellation => "Hủy phiếu xuất",
+        InventoryTransactionType.AdjustmentIncrease => "Điều chỉnh tăng",
+        InventoryTransactionType.AdjustmentDecrease => "Điều chỉnh giảm",
+        InventoryTransactionType.OpeningBalance => "Tồn đầu kỳ",
+        _ => type.ToString()
+    };
+
+    private static string ReceiptStatusText(ReceiptStatus? status) => status switch
+    {
+        ReceiptStatus.Posted => "Đã ghi sổ",
+        ReceiptStatus.Draft => "Nháp — cần kiểm tra",
+        ReceiptStatus.Cancelled => "Đã hủy",
+        _ => "Giao dịch độc lập"
+    };
+}
+
+@{
+    ViewData["Title"] = $"Tồn kho {Model.Code}";
+    var canOpenReceipts = User.IsInRole(ApplicationRoles.Admin) ||
+        User.IsInRole(ApplicationRoles.WarehouseStaff);
+    var reconciliationClass = Model.ReconciliationStatus == InventoryReconciliationStatus.Match
+        ? "alert-success" : "alert-warning";
+}
+
+<div class="inventory-management">
+    <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
+        <div>
+            <h1 class="h3 mb-1">Chi tiết tồn kho</h1>
+            <p class="text-muted mb-0">@Model.Code — @Model.Name</p>
+        </div>
+        <div class="d-flex gap-2"><a asp-action="Transactions" asp-route-productId="@Model.Id" class="btn btn-outline-primary">Lịch sử giao dịch</a><a asp-action="Index" class="btn btn-outline-secondary">Quay lại danh sách</a></div>
+    </div>
+
+    @if (!ViewData.ModelState.IsValid)
+    {
+        <div class="alert alert-warning" asp-validation-summary="All"></div>
+    }
+
+    <div class="card border-0 shadow-sm mb-4"><div class="card-body p-4">
+        <div class="row g-4">
+            <div class="col-lg-4">
+                <div class="text-muted small">Tồn hiện tại</div>
+                <div class="display-6 fw-semibold">@Model.CurrentQuantity.ToString("N3") <span class="fs-5 text-muted">@Model.Unit</span></div>
+                <span class="badge @(Model.StockStatus == StockLevelStatus.OutOfStock ? "text-bg-danger" : Model.StockStatus == StockLevelStatus.LowStock ? "text-bg-warning" : "text-bg-success")">@StockText(Model.StockStatus)</span>
+            </div>
+            <div class="col-lg-8"><dl class="row mb-0">
+                <dt class="col-sm-4">Danh mục</dt><dd class="col-sm-8">@Model.CategoryName</dd>
+                <dt class="col-sm-4">Đơn vị tính</dt><dd class="col-sm-8">@Model.Unit</dd>
+                <dt class="col-sm-4">Mức tồn tối thiểu</dt><dd class="col-sm-8">@Model.MinimumStockLevel.ToString("N3")</dd>
+                <dt class="col-sm-4">Trạng thái hàng hóa</dt><dd class="col-sm-8">@(Model.IsActive ? "Đang hoạt động" : "Ngừng hoạt động")</dd>
+                <dt class="col-sm-4">Giao dịch gần nhất</dt><dd class="col-sm-8">@(Model.LastTransactionAt?.ToLocalTime().ToString("dd/MM/yyyy HH:mm:ss") ?? "Chưa có")</dd>
+            </dl></div>
+        </div>
+    </div></div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-4"><div class="card border-0 shadow-sm h-100"><div class="card-body"><div class="text-muted">Tổng nhập đã ghi sổ</div><div class="h4 mb-0">@Model.PostedImportQuantity.ToString("N3") @Model.Unit</div></div></div></div>
+        <div class="col-md-4"><div class="card border-0 shadow-sm h-100"><div class="card-body"><div class="text-muted">Tổng xuất đã ghi sổ</div><div class="h4 mb-0">@Model.PostedExportQuantity.ToString("N3") @Model.Unit</div></div></div></div>
+        <div class="col-md-4"><div class="card border-0 shadow-sm h-100"><div class="card-body"><div class="text-muted">Tổng biến động lịch sử</div><div class="h4 mb-0">@Model.LedgerQuantity.ToString("N3") @Model.Unit</div></div></div></div>
+    </div>
+    <div class="alert @reconciliationClass" role="status">
+        <strong>Đối chiếu tồn kho:</strong> @Model.ReconciliationMessage
+    </div>
+    <p class="small text-muted">Tổng nhập/xuất chỉ lấy giao dịch liên kết phiếu đã ghi sổ. Tổng biến động gồm mọi loại giao dịch đã lưu, kể cả tồn đầu kỳ, điều chỉnh và giao dịch đảo. Số dư hiện tại lấy từ Product.CurrentQuantity; không tính phiếu Nháp như một giao dịch mới.</p>
+
+    <div class="card border-0 shadow-sm">
+        <div class="card-body pb-0"><h2 class="h5">Lịch sử biến động (@Model.TransactionCount)</h2></div>
+        <div class="table-responsive"><table class="table table-hover align-middle mb-0">
+            <thead><tr><th>Thời gian</th><th>Loại</th><th>Chứng từ</th><th class="text-end">Thay đổi</th><th class="text-end">Tồn sau</th><th>Người thực hiện</th><th>Trạng thái</th></tr></thead>
+            <tbody>
+                @if (Model.Transactions.Count == 0)
+                {
+                    <tr><td colspan="7" class="text-center text-muted py-5">Hàng hóa chưa có giao dịch tồn kho.</td></tr>
+                }
+                else
+                {
+                    @foreach (var transaction in Model.Transactions)
+                    {
+                        <tr>
+                            <td><a asp-action="TransactionDetails" asp-route-id="@transaction.Id">@transaction.OccurredAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm:ss")</a></td>
+                            <td>@TransactionText(transaction.TransactionType)</td>
+                            <td>
+                                @if (transaction.ImportReceiptId.HasValue && canOpenReceipts)
+                                {
+                                    <a asp-controller="ImportReceiptManagement" asp-action="Details" asp-route-id="@transaction.ImportReceiptId">@transaction.ImportReceiptNumber</a>
+                                }
+                                else if (transaction.ExportReceiptId.HasValue && canOpenReceipts)
+                                {
+                                    <a asp-controller="ExportReceiptManagement" asp-action="Details" asp-route-id="@transaction.ExportReceiptId">@transaction.ExportReceiptNumber</a>
+                                }
+                                else if (transaction.ImportReceiptNumber is not null)
+                                {
+                                    @transaction.ImportReceiptNumber
+                                }
+                                else if (transaction.ExportReceiptNumber is not null)
+                                {
+                                    @transaction.ExportReceiptNumber
+                                }
+                                else
+                                {
+                                    <span>Giao dịch #@transaction.Id</span>
+                                }
+                            </td>
+                            <td class="text-end @(transaction.QuantityChange >= 0 ? "text-success" : "text-danger") fw-semibold">@transaction.QuantityChange.ToString("+0.000;-0.000;0.000")</td>
+                            <td class="text-end">@transaction.BalanceAfter.ToString("N3")</td>
+                            <td>@transaction.PerformedByName</td>
+                            <td>@ReceiptStatusText(transaction.ReceiptStatus)</td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table></div>
+        @if (Model.TotalPages > 1)
+        {
+            <nav class="card-body d-flex flex-wrap align-items-center gap-2" aria-label="Phân trang lịch sử tồn kho">
+                <span>Trang @Model.Page / @Model.TotalPages</span>
+                @if (Model.Page > 1)
+                {
+                    <a asp-action="Details" asp-route-id="@Model.Id" asp-route-page="@(Model.Page - 1)" class="btn btn-outline-secondary btn-sm">Trang trước</a>
+                }
+                @if (Model.Page < Model.TotalPages)
+                {
+                    <a asp-action="Details" asp-route-id="@Model.Id" asp-route-page="@(Model.Page + 1)" class="btn btn-outline-secondary btn-sm">Trang sau</a>
+                }
+            </nav>
+        }
+    </div>
+</div>

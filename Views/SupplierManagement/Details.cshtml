@@ -1,0 +1,81 @@
+@model WarehouseManagement.Models.SupplierManagement.SupplierDetailsViewModel
+
+@{
+    ViewData["Title"] = "Chi tiết nhà cung cấp";
+}
+
+<div class="supplier-management">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <div>
+            <h1 class="h3 mb-1">Chi tiết nhà cung cấp</h1>
+            <p class="text-muted mb-0">Mã nhà cung cấp: @Model.Code</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a asp-action="Index" class="btn btn-outline-secondary">Quay lại</a>
+            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-primary">Chỉnh sửa</a>
+        </div>
+    </div>
+
+    @if (TempData["SuccessMessage"] is string successMessage)
+    {
+        <div class="alert alert-success" role="alert">@successMessage</div>
+    }
+    @if (TempData["ErrorMessage"] is string errorMessage)
+    {
+        <div class="alert alert-danger" role="alert">@errorMessage</div>
+    }
+
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-4 p-lg-5">
+            <dl class="row mb-0 supplier-details">
+                <dt class="col-md-4">Tên nhà cung cấp</dt>
+                <dd class="col-md-8 fw-semibold">@Model.Name</dd>
+
+                <dt class="col-md-4">Số điện thoại</dt>
+                <dd class="col-md-8">@(Model.Phone ?? "Chưa có")</dd>
+
+                <dt class="col-md-4">Email</dt>
+                <dd class="col-md-8">@(Model.Email ?? "Chưa có")</dd>
+
+                <dt class="col-md-4">Địa chỉ</dt>
+                <dd class="col-md-8">@(Model.Address ?? "Chưa có")</dd>
+
+                <dt class="col-md-4">Trạng thái</dt>
+                <dd class="col-md-8">
+                    @if (Model.IsActive)
+                    {
+                        <span class="badge text-bg-success">Đang hoạt động</span>
+                    }
+                    else
+                    {
+                        <span class="badge text-bg-secondary">Ngừng hoạt động</span>
+                    }
+                </dd>
+
+                <dt class="col-md-4">Số phiếu nhập liên quan</dt>
+                <dd class="col-md-8">@Model.ImportReceiptCount</dd>
+
+                <dt class="col-md-4">Thời gian tạo</dt>
+                <dd class="col-md-8">@Model.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</dd>
+
+                <dt class="col-md-4">Cập nhật gần nhất</dt>
+                <dd class="col-md-8">@(Model.UpdatedAt?.ToLocalTime().ToString("dd/MM/yyyy HH:mm") ?? "Chưa cập nhật")</dd>
+            </dl>
+
+            <hr class="my-4" />
+            @if (Model.ImportReceiptCount > 0)
+            {
+                <div class="alert alert-warning">
+                    Nhà cung cấp đang có @Model.ImportReceiptCount phiếu nhập liên quan. Thay đổi trạng thái không xóa lịch sử này.
+                </div>
+            }
+            <form asp-action="ToggleStatus" asp-route-id="@Model.Id" method="post"
+                  onsubmit="return confirm('@(Model.IsActive ? "Ngừng hoạt động nhà cung cấp này?" : "Kích hoạt lại nhà cung cấp này?")');">
+                <input type="hidden" name="rowVersion" value="@Model.RowVersion" />
+                <button type="submit" class="btn @(Model.IsActive ? "btn-outline-danger" : "btn-outline-success")">
+                    @(Model.IsActive ? "Ngừng hoạt động" : "Kích hoạt")
+                </button>
+            </form>
+        </div>
+    </div>
+</div>

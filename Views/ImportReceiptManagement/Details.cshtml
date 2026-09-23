@@ -1,0 +1,123 @@
+@using WarehouseManagement.Models.Enums
+@model WarehouseManagement.Models.ImportReceiptManagement.ImportReceiptDetailsViewModel
+
+@functions {
+    private static string StatusText(ReceiptStatus status) => status switch
+    {
+        ReceiptStatus.Draft => "Nháp",
+        ReceiptStatus.Posted => "Đã ghi sổ",
+        ReceiptStatus.Cancelled => "Đã hủy",
+        _ => status.ToString()
+    };
+
+    private static string StatusBadge(ReceiptStatus status) => status switch
+    {
+        ReceiptStatus.Draft => "text-bg-secondary",
+        ReceiptStatus.Posted => "text-bg-success",
+        ReceiptStatus.Cancelled => "text-bg-danger",
+        _ => "text-bg-light"
+    };
+}
+
+@{
+    ViewData["Title"] = $"Phiếu nhập {Model.ReceiptNumber}";
+}
+
+<div class="import-receipt-management">
+    <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
+        <div>
+            <h1 class="h3 mb-1">Chi tiết phiếu nhập</h1>
+            <p class="text-muted mb-0">@Model.ReceiptNumber</p>
+        </div>
+        <span class="badge @StatusBadge(Model.Status) px-3 py-2">@StatusText(Model.Status)</span>
+    </div>
+
+    @if (TempData["SuccessMessage"] is string successMessage)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @successMessage
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Đóng"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] is string errorMessage)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @errorMessage
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Đóng"></button>
+        </div>
+    }
+
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body p-4">
+            <dl class="row import-receipt-details mb-0">
+                <dt class="col-md-3">Số phiếu</dt>
+                <dd class="col-md-9 fw-semibold">@Model.ReceiptNumber</dd>
+                <dt class="col-md-3">Nhà cung cấp</dt>
+                <dd class="col-md-9">@Model.SupplierCode - @Model.SupplierName</dd>
+                <dt class="col-md-3">Ngày nhập</dt>
+                <dd class="col-md-9">@Model.ReceiptDate.ToString("dd/MM/yyyy")</dd>
+                <dt class="col-md-3">Người tạo</dt>
+                <dd class="col-md-9">@Model.CreatedByName</dd>
+                <dt class="col-md-3">Thời gian tạo</dt>
+                <dd class="col-md-9">@Model.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm:ss")</dd>
+                <dt class="col-md-3">Người ghi sổ</dt>
+                <dd class="col-md-9">@(Model.PostedByName ?? "—")</dd>
+                <dt class="col-md-3">Thời gian ghi sổ</dt>
+                <dd class="col-md-9">@(Model.PostedAt?.ToLocalTime().ToString("dd/MM/yyyy HH:mm:ss") ?? "—")</dd>
+                <dt class="col-md-3">Ghi chú</dt>
+                <dd class="col-md-9">@(Model.Note ?? "—")</dd>
+            </dl>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="table-responsive">
+            <table class="table align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th class="text-center">STT</th>
+                        <th>Mã hàng</th>
+                        <th>Tên hàng hóa</th>
+                        <th>Đơn vị</th>
+                        <th class="text-end">Số lượng</th>
+                        <th class="text-end">Đơn giá</th>
+                        <th class="text-end">Thành tiền</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (var index = 0; index < Model.Details.Count; index++)
+                    {
+                        var detail = Model.Details[index];
+                        <tr>
+                            <td class="text-center">@(index + 1)</td>
+                            <td class="fw-semibold">@detail.ProductCode</td>
+                            <td>@detail.ProductName</td>
+                            <td>@detail.Unit</td>
+                            <td class="text-end">@detail.Quantity.ToString("N3")</td>
+                            <td class="text-end">@detail.UnitCost.ToString("N2")</td>
+                            <td class="text-end fw-semibold">@detail.LineTotal.ToString("N2")</td>
+                        </tr>
+                    }
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <th colspan="6" class="text-end">Tổng tiền</th>
+                        <th class="text-end fs-5 text-primary">@Model.TotalAmount.ToString("N2")</th>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+
+    <div class="d-flex flex-wrap gap-2">
+        <a asp-action="Index" class="btn btn-outline-secondary">Quay lại danh sách</a>
+        @if (Model.Status == ReceiptStatus.Draft)
+        {
+            <form asp-action="Post" asp-route-id="@Model.Id" method="post"
+                  onsubmit="return confirm('Ghi sổ phiếu này và cập nhật tồn kho? Thao tác không thể thực hiện lần hai.');">
+                <input type="hidden" name="rowVersion" value="@Model.RowVersion" />
+                <button type="submit" class="btn btn-success">Ghi sổ phiếu nhập</button>
+            </form>
+        }
+    </div>
+</div>

@@ -1,0 +1,40 @@
+@using WarehouseManagement.Authorization
+@model WarehouseManagement.Models.Reporting.WarehouseDashboardViewModel
+@{
+    ViewData["Title"] = "Dashboard kho";
+    ViewData["FilterAction"] = "Dashboard";
+    var maximum = Model.Timeline.SelectMany(x => new[] { x.ImportedQuantity, x.ExportedQuantity }).DefaultIfEmpty(0m).Max();
+}
+<div class="warehouse-reports">
+    <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
+        <div><h1 class="h3 mb-1">Dashboard quản lý kho</h1><p class="text-muted mb-0">Số liệu thực từ phiếu đã ghi sổ. Thời gian giao dịch và bộ lọc ngày theo UTC.</p></div>
+        @if (User.IsInRole(ApplicationRoles.Admin) || User.IsInRole(ApplicationRoles.Accountant))
+        { <a asp-action="Index" class="btn btn-outline-primary">Báo cáo nhập–xuất–tồn</a> }
+    </div>
+    <partial name="_Filters" model="Model.Filter" />
+    <div class="row g-3 mb-4">
+        <div class="col-lg-4 col-md-6"><div class="card h-100 border-0 shadow-sm"><div class="card-body"><div class="text-muted">Hàng hóa đang hoạt động phù hợp</div><div class="h3 mb-0">@Model.ActiveProductCount</div></div></div></div>
+        <div class="col-lg-4 col-md-6"><div class="card h-100 border-0 shadow-sm"><div class="card-body"><div class="text-muted">Tổng danh mục hệ thống</div><div class="h3 mb-0">@Model.CategoryCount</div></div></div></div>
+        <div class="col-lg-4 col-md-6"><div class="card h-100 border-0 shadow-sm"><div class="card-body"><div class="text-muted">Tồn hiện tại của hàng hóa phù hợp</div><div class="h3 mb-0">@Model.CurrentQuantity.ToString("N3")</div></div></div></div>
+        <div class="col-lg-4 col-md-6"><div class="card h-100 border-0 shadow-sm"><div class="card-body"><div class="text-muted">Nhập trong kỳ</div><div class="h3 mb-0 text-success">@Model.ImportedQuantity.ToString("N3")</div></div></div></div>
+        <div class="col-lg-4 col-md-6"><div class="card h-100 border-0 shadow-sm"><div class="card-body"><div class="text-muted">Xuất trong kỳ</div><div class="h3 mb-0 text-primary">@Model.ExportedQuantity.ToString("N3")</div></div></div></div>
+        <div class="col-lg-4 col-md-6"><div class="card h-100 border-0 shadow-sm"><div class="card-body"><div class="text-muted">Hàng đang hoạt động tồn thấp hoặc hết</div><div class="h3 mb-0 text-warning">@Model.LowStockCount</div></div></div></div>
+    </div>
+    <div class="card border-0 shadow-sm mb-4"><div class="card-body"><h2 class="h5">Nhập–xuất theo @(Model.Filter.GroupBy == "month" ? "tháng" : "ngày")</h2>
+        @if (Model.Timeline.Count == 0) { <p class="text-muted mb-0">Không có giao dịch đã ghi sổ trong kỳ lọc.</p> }
+        else
+        {
+            <div class="small text-muted mb-3">Thanh xanh lá: nhập · thanh xanh dương: xuất. Hiển thị tối đa 12 mốc gần nhất có phát sinh.</div>
+            @foreach (var bucket in Model.Timeline)
+            {
+                <div class="row align-items-center g-2 mb-2">
+                    <div class="col-md-2 small">@bucket.Label</div>
+                    <div class="col-md-8"><div class="report-bar-track mb-1"><div class="report-bar report-bar-import" style="width:@(maximum == 0 ? 0 : Math.Round(bucket.ImportedQuantity * 100m / maximum, 1).ToString(System.Globalization.CultureInfo.InvariantCulture))%"></div></div><div class="report-bar-track"><div class="report-bar report-bar-export" style="width:@(maximum == 0 ? 0 : Math.Round(bucket.ExportedQuantity * 100m / maximum, 1).ToString(System.Globalization.CultureInfo.InvariantCulture))%"></div></div></div>
+                    <div class="col-md-2 small text-md-end">+@bucket.ImportedQuantity.ToString("N3") / −@bucket.ExportedQuantity.ToString("N3")</div>
+                </div>
+            }
+            <div class="table-responsive mt-4"><table class="table table-sm"><thead><tr><th>Mốc UTC</th><th class="text-end">Nhập</th><th class="text-end">Số phiếu nhập</th><th class="text-end">Xuất</th><th class="text-end">Số phiếu xuất</th></tr></thead><tbody>@foreach (var bucket in Model.Timeline) { <tr><td>@bucket.Label</td><td class="text-end">@bucket.ImportedQuantity.ToString("N3")</td><td class="text-end">@bucket.ImportReceiptCount</td><td class="text-end">@bucket.ExportedQuantity.ToString("N3")</td><td class="text-end">@bucket.ExportReceiptCount</td></tr> }</tbody></table></div>
+        }
+    </div></div>
+    <p class="small text-muted">Tổng số lượng cộng gộp nhiều đơn vị tính chỉ phục vụ thống kê kỹ thuật; không phải một đại lượng vật lý đồng nhất. Tồn hiện tại không đổi theo khoảng ngày lọc.</p>
+</div>

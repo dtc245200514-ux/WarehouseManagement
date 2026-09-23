@@ -1,0 +1,113 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - WarehouseManagement</title>
+    <script type="importmap"></script>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/WarehouseManagement.styles.css" asp-append-version="true" />
+</head>
+<body>
+    <header>
+        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
+            <div class="container-fluid">
+                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">WarehouseManagement</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
+                        aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
+                    <ul class="navbar-nav flex-grow-1">
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+                        </li>
+                        @if (User.IsInRole(WarehouseManagement.Authorization.ApplicationRoles.Admin) ||
+                            User.IsInRole(WarehouseManagement.Authorization.ApplicationRoles.WarehouseStaff) ||
+                            User.IsInRole(WarehouseManagement.Authorization.ApplicationRoles.Accountant))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-area="" asp-controller="CategoryManagement" asp-action="Index">Danh mục</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-area="" asp-controller="Inventory" asp-action="Index">Tồn kho</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-area="" asp-controller="Inventory" asp-action="Transactions">Lịch sử giao dịch</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-area="" asp-controller="Reports" asp-action="Dashboard">Dashboard</a>
+                            </li>
+                        }
+                        @if (User.IsInRole(WarehouseManagement.Authorization.ApplicationRoles.Admin) ||
+                            User.IsInRole(WarehouseManagement.Authorization.ApplicationRoles.Accountant))
+                        {
+                            <li class="nav-item"><a class="nav-link text-dark" asp-area="" asp-controller="Reports" asp-action="Index">Báo cáo N–X–T</a></li>
+                        }
+                        @if (User.IsInRole(WarehouseManagement.Authorization.ApplicationRoles.Admin) ||
+                            User.IsInRole(WarehouseManagement.Authorization.ApplicationRoles.WarehouseStaff))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-area="" asp-controller="ProductManagement" asp-action="Index">Hàng hóa</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-area="" asp-controller="SupplierManagement" asp-action="Index">Nhà cung cấp</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-area="" asp-controller="ImportReceiptManagement" asp-action="Index">Phiếu nhập</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-area="" asp-controller="ExportReceiptManagement" asp-action="Index">Phiếu xuất</a>
+                            </li>
+                        }
+                        @if (User.IsInRole(WarehouseManagement.Authorization.ApplicationRoles.Admin))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-area="" asp-controller="UserManagement" asp-action="Index">Quản lý tài khoản</a>
+                            </li>
+                        }
+                    </ul>
+                    <ul class="navbar-nav align-items-sm-center">
+                        @if (User.Identity?.IsAuthenticated == true)
+                        {
+                            <li class="nav-item">
+                                <span class="nav-link text-dark">@User.Identity.Name</span>
+                            </li>
+                            <li class="nav-item">
+                                <form asp-area="" asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
+                                    <button type="submit" class="btn btn-outline-danger btn-sm">Đăng xuất</button>
+                                </form>
+                            </li>
+                        }
+                        else
+                        {
+                            <li class="nav-item">
+                                <a class="btn btn-outline-primary btn-sm" asp-area="" asp-controller="Account" asp-action="Login">Đăng nhập</a>
+                            </li>
+                        }
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+    <div class="container">
+        <main role="main" class="pb-3">
+            @RenderBody()
+        </main>
+    </div>
+
+    <footer class="border-top footer text-muted">
+        <div class="container">
+            &copy; 2026 - WarehouseManagement - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+        </div>
+    </footer>
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

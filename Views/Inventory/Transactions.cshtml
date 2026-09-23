@@ -1,0 +1,97 @@
+@using WarehouseManagement.Models.Enums
+@using WarehouseManagement.Models.InventoryManagement
+@model InventoryTransactionsViewModel
+
+@functions {
+    private static string TypeText(InventoryTransactionType type) => type switch
+    {
+        InventoryTransactionType.Import => "Nhập kho",
+        InventoryTransactionType.Export => "Xuất kho",
+        InventoryTransactionType.ImportCancellation => "Hủy phiếu nhập",
+        InventoryTransactionType.ExportCancellation => "Hủy phiếu xuất",
+        InventoryTransactionType.AdjustmentIncrease => "Điều chỉnh tăng",
+        InventoryTransactionType.AdjustmentDecrease => "Điều chỉnh giảm",
+        InventoryTransactionType.OpeningBalance => "Tồn đầu kỳ",
+        _ => type.ToString()
+    };
+}
+
+@{
+    ViewData["Title"] = "Lịch sử giao dịch";
+}
+
+<div class="inventory-management">
+    <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
+        <div><h1 class="h3 mb-1">Lịch sử giao dịch</h1><p class="text-muted mb-0">Có @Model.TotalCount giao dịch phù hợp. Dữ liệu chỉ để tra cứu, không thể sửa tại đây.</p></div>
+        <a asp-action="Index" class="btn btn-outline-secondary">Quay lại tồn kho</a>
+    </div>
+
+    <form asp-action="Transactions" method="get" class="card border-0 shadow-sm mb-4">
+        <div class="card-body row g-3 align-items-end">
+            <div class="col-lg-4 col-md-6"><label for="productId" class="form-label">Hàng hóa</label><select id="productId" name="productId" class="form-select"><option value="">Tất cả hàng hóa</option>
+                @foreach (var product in Model.Products)
+                {
+                    <option value="@product.Id" selected="@(Model.ProductId == product.Id)">@product.Code — @product.Name</option>
+                }
+            </select></div>
+            <div class="col-lg-2 col-md-6"><label for="transactionType" class="form-label">Loại giao dịch</label><select id="transactionType" name="transactionType" class="form-select"><option value="">Tất cả</option>
+                @foreach (var type in Enum.GetValues<InventoryTransactionType>())
+                {
+                    <option value="@type" selected="@(Model.TransactionType == type)">@TypeText(type)</option>
+                }
+            </select></div>
+            <div class="col-lg-2 col-md-6"><label for="fromDate" class="form-label">Từ ngày</label><input id="fromDate" name="fromDate" type="date" class="form-control" value="@(Model.FromDate?.ToString("yyyy-MM-dd"))" /></div>
+            <div class="col-lg-2 col-md-6"><label for="toDate" class="form-label">Đến ngày</label><input id="toDate" name="toDate" type="date" class="form-control" value="@(Model.ToDate?.ToString("yyyy-MM-dd"))" /></div>
+            <div class="col-lg-2 col-md-6 d-flex gap-2"><button class="btn btn-primary" type="submit">Lọc</button><a asp-action="Transactions" class="btn btn-outline-secondary">Xóa lọc</a></div>
+            @if (!ViewData.ModelState.IsValid)
+            {
+                <div class="col-12 text-danger" asp-validation-summary="All"></div>
+            }
+        </div>
+    </form>
+
+    <div class="card border-0 shadow-sm"><div class="table-responsive"><table class="table table-hover align-middle mb-0">
+        <thead><tr><th>STT</th><th>Thời gian</th><th>Giao dịch</th><th>Hàng hóa</th><th>Loại</th><th class="text-end">Biến động</th><th class="text-end">Tồn sau</th><th>Chứng từ</th><th>Người thực hiện</th><th>Thao tác</th></tr></thead>
+        <tbody>
+            @if (Model.Transactions.Count == 0)
+            {
+                <tr><td colspan="10" class="text-center text-muted py-5">Không có giao dịch phù hợp với điều kiện lọc.</td></tr>
+            }
+            else
+            {
+                @for (var index = 0; index < Model.Transactions.Count; index++)
+                {
+                    var transaction = Model.Transactions[index];
+                    <tr>
+                        <td>@((Model.Page - 1) * 20 + index + 1)</td>
+                        <td>@transaction.OccurredAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm:ss")</td>
+                        <td class="fw-semibold">#@transaction.Id</td>
+                        <td><a asp-action="Details" asp-route-id="@transaction.ProductId">@transaction.ProductCode</a><span class="d-block small text-muted">@transaction.ProductName</span></td>
+                        <td><span class="badge @(transaction.QuantityChange >= 0 ? "text-bg-success" : "text-bg-secondary")">@TypeText(transaction.TransactionType)</span></td>
+                        <td class="text-end">@transaction.QuantityChange.ToString("+0.000;-0.000;0.000") @transaction.Unit</td>
+                        <td class="text-end">@transaction.BalanceAfter.ToString("N3") @transaction.Unit</td>
+                        <td>@(transaction.ImportReceiptNumber ?? transaction.ExportReceiptNumber ?? "—")</td>
+                        <td>@transaction.PerformedByName</td>
+                        <td><a asp-action="TransactionDetails" asp-route-id="@transaction.Id" class="btn btn-outline-primary btn-sm">Chi tiết</a></td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table></div>
+        @if (Model.TotalPages > 1)
+        {
+            <nav class="card-body d-flex flex-wrap align-items-center gap-2" aria-label="Phân trang lịch sử giao dịch">
+                <span>Trang @Model.Page / @Model.TotalPages</span>
+                @if (Model.Page > 1)
+                {
+                    <a asp-action="Transactions" asp-route-page="@(Model.Page - 1)" asp-route-productId="@Model.ProductId" asp-route-transactionType="@Model.TransactionType" asp-route-fromDate="@(Model.FromDate?.ToString("yyyy-MM-dd"))" asp-route-toDate="@(Model.ToDate?.ToString("yyyy-MM-dd"))" class="btn btn-outline-secondary btn-sm">Trang trước</a>
+                }
+                @if (Model.Page < Model.TotalPages)
+                {
+                    <a asp-action="Transactions" asp-route-page="@(Model.Page + 1)" asp-route-productId="@Model.ProductId" asp-route-transactionType="@Model.TransactionType" asp-route-fromDate="@(Model.FromDate?.ToString("yyyy-MM-dd"))" asp-route-toDate="@(Model.ToDate?.ToString("yyyy-MM-dd"))" class="btn btn-outline-secondary btn-sm">Trang sau</a>
+                }
+            </nav>
+        }
+    </div>
+    <p class="small text-muted mt-3">Các loại điều chỉnh và tồn đầu kỳ đã có trong mô hình dữ liệu nhưng hiện chưa có nghiệp vụ lập giao dịch tương ứng. Bộ lọc không tạo dữ liệu mới.</p>
+</div>

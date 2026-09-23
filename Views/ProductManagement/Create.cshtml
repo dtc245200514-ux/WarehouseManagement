@@ -1,0 +1,70 @@
+@model WarehouseManagement.Models.ProductManagement.CreateProductViewModel
+
+@{
+    ViewData["Title"] = "Thêm hàng hóa";
+}
+
+<div class="product-management">
+    <div class="mb-4">
+        <h1 class="h3 mb-1">Thêm hàng hóa</h1>
+        <p class="text-muted mb-0">Khai báo thông tin cơ bản; tồn hiện tại khởi tạo bằng 0.</p>
+    </div>
+
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-4 p-lg-5">
+            <form asp-action="Create" method="post" novalidate>
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label asp-for="Code" class="form-label"></label>
+                        <input asp-for="Code" class="form-control" maxlength="50" autofocus />
+                        <span asp-validation-for="Code" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-8">
+                        <label asp-for="Name" class="form-label"></label>
+                        <input asp-for="Name" class="form-control" maxlength="200" />
+                        <span asp-validation-for="Name" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="CategoryId" class="form-label"></label>
+                        <select asp-for="CategoryId" class="form-select">
+                            <option value="0">-- Chọn danh mục --</option>
+                            @foreach (var category in Model.Categories)
+                            {
+                                <option value="@category.Id">@category.Name</option>
+                            }
+                        </select>
+                        <span asp-validation-for="CategoryId" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-3">
+                        <label asp-for="Unit" class="form-label"></label>
+                        <input asp-for="Unit" class="form-control" maxlength="50" />
+                        <span asp-validation-for="Unit" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-3">
+                        <label asp-for="MinimumStockLevel" class="form-label"></label>
+                        <input asp-for="MinimumStockLevel" class="form-control" type="number" min="0" step="0.001" />
+                        <span asp-validation-for="MinimumStockLevel" class="text-danger"></span>
+                    </div>
+                    <div class="col-12">
+                        <label asp-for="Description" class="form-label"></label>
+                        <textarea asp-for="Description" class="form-control" maxlength="500" rows="3"></textarea>
+                        <span asp-validation-for="Description" class="text-danger"></span>
+                    </div>
+                    <div class="col-12">
+                        <div class="form-check form-switch">
+                            <input asp-for="IsActive" class="form-check-input" />
+                            <label asp-for="IsActive" class="form-check-label"></label>
+                        </div>
+                    </div>
+                </div>
+                <div class="d-flex gap-2 mt-4">
+                    <button type="submit" class="btn btn-primary">Lưu hàng hóa</button>
+                    <a asp-action="Index" class="btn btn-outline-secondary">Hủy</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

@@ -1,0 +1,86 @@
+@using WarehouseManagement.Models.Enums
+@model WarehouseManagement.Models.ExportReceiptManagement.ExportReceiptIndexViewModel
+
+@functions {
+    private static string StatusText(ReceiptStatus status) => status switch
+    {
+        ReceiptStatus.Draft => "Nháp",
+        ReceiptStatus.Posted => "Đã ghi sổ",
+        ReceiptStatus.Cancelled => "Đã hủy",
+        _ => status.ToString()
+    };
+}
+
+@{
+    ViewData["Title"] = "Danh sách phiếu xuất";
+}
+
+<div class="export-receipt-management">
+    <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
+        <div>
+            <h1 class="h3 mb-1">Danh sách phiếu xuất kho</h1>
+            <p class="text-muted mb-0">Phiếu nháp chưa trừ tồn kho. Có @Model.TotalCount phiếu phù hợp.</p>
+        </div>
+        <a asp-action="Create" class="btn btn-primary">+ Lập phiếu xuất</a>
+    </div>
+
+    <form asp-action="Index" method="get" class="card border-0 shadow-sm mb-4">
+        <div class="card-body row g-3 align-items-end">
+            <div class="col-md-4"><label for="searchTerm" class="form-label">Số phiếu</label><input id="searchTerm" name="searchTerm" value="@Model.SearchTerm" maxlength="100" class="form-control" placeholder="Tìm theo số phiếu" /></div>
+            <div class="col-md-2"><label for="status" class="form-label">Trạng thái</label><select id="status" name="status" class="form-select"><option value="">Tất cả</option>
+                @foreach (var option in Enum.GetValues<ReceiptStatus>())
+                {
+                    <option value="@option" selected="@(Model.Status == option)">@StatusText(option)</option>
+                }
+            </select></div>
+            <div class="col-md-3"><label for="createdByUserId" class="form-label">Người lập</label><select id="createdByUserId" name="createdByUserId" class="form-select"><option value="">Tất cả</option>
+                @foreach (var creator in Model.Creators)
+                {
+                    <option value="@creator.Id" selected="@(Model.CreatedByUserId == creator.Id)">@creator.DisplayName</option>
+                }
+            </select></div>
+            <div class="col-md-3"><label for="fromDate" class="form-label">Từ ngày lập</label><input id="fromDate" name="fromDate" type="date" value="@(Model.FromDate?.ToString("yyyy-MM-dd"))" class="form-control" /></div>
+            <div class="col-md-3"><label for="toDate" class="form-label">Đến ngày lập</label><input id="toDate" name="toDate" type="date" value="@(Model.ToDate?.ToString("yyyy-MM-dd"))" class="form-control" /></div>
+            <div class="col-md-auto d-flex gap-2"><button type="submit" class="btn btn-primary">Tìm và lọc</button><a asp-action="Index" class="btn btn-outline-secondary">Xóa lọc</a></div>
+            @if (!ViewData.ModelState.IsValid)
+            {
+                <div class="col-12 text-danger" asp-validation-summary="All"></div>
+            }
+        </div>
+    </form>
+
+    <div class="card border-0 shadow-sm">
+        <div class="table-responsive"><table class="table align-middle mb-0">
+            <thead><tr><th>STT</th><th>Số phiếu</th><th>Người lập</th><th>Ngày lập</th><th class="text-end">Số dòng</th><th class="text-end">Tổng lượng*</th><th>Trạng thái</th><th>Ghi sổ lúc</th><th>Thao tác</th></tr></thead>
+            <tbody>
+                @if (Model.Receipts.Count == 0)
+                {
+                    <tr><td colspan="9" class="text-center text-muted py-5">Không có phiếu xuất phù hợp.</td></tr>
+                }
+                else
+                {
+                    @for (var index = 0; index < Model.Receipts.Count; index++)
+                    {
+                        var receipt = Model.Receipts[index];
+                        <tr><td>@((Model.Page - 1) * 20 + index + 1)</td><td class="fw-semibold">@receipt.ReceiptNumber</td><td>@receipt.CreatedByName</td><td>@receipt.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</td><td class="text-end">@receipt.DetailCount</td><td class="text-end">@receipt.TotalQuantity.ToString("N3")</td><td><span class="badge @(receipt.Status == ReceiptStatus.Posted ? "text-bg-success" : "text-bg-secondary")">@StatusText(receipt.Status)</span></td><td>@(receipt.PostedAt?.ToLocalTime().ToString("dd/MM/yyyy HH:mm") ?? "—")</td><td><a asp-action="Details" asp-route-id="@receipt.Id" class="btn btn-outline-secondary btn-sm">Chi tiết</a></td></tr>
+                    }
+                }
+            </tbody>
+        </table></div>
+        @if (Model.TotalPages > 1)
+        {
+            <nav class="card-body" aria-label="Phân trang phiếu xuất"><div class="d-flex flex-wrap align-items-center gap-2">
+                <span>Trang @Model.Page / @Model.TotalPages</span>
+                @if (Model.Page > 1)
+                {
+                    <a asp-action="Index" asp-route-page="@(Model.Page - 1)" asp-route-searchTerm="@Model.SearchTerm" asp-route-status="@Model.Status" asp-route-fromDate="@(Model.FromDate?.ToString("yyyy-MM-dd"))" asp-route-toDate="@(Model.ToDate?.ToString("yyyy-MM-dd"))" asp-route-createdByUserId="@Model.CreatedByUserId" class="btn btn-outline-secondary btn-sm">Trang trước</a>
+                }
+                @if (Model.Page < Model.TotalPages)
+                {
+                    <a asp-action="Index" asp-route-page="@(Model.Page + 1)" asp-route-searchTerm="@Model.SearchTerm" asp-route-status="@Model.Status" asp-route-fromDate="@(Model.FromDate?.ToString("yyyy-MM-dd"))" asp-route-toDate="@(Model.ToDate?.ToString("yyyy-MM-dd"))" asp-route-createdByUserId="@Model.CreatedByUserId" class="btn btn-outline-secondary btn-sm">Trang sau</a>
+                }
+            </div></nav>
+        }
+    </div>
+    <p class="small text-muted mt-2">* Tổng lượng cộng các mặt hàng, có thể khác đơn vị tính; xem chi tiết để đối chiếu từng hàng.</p>
+</div>

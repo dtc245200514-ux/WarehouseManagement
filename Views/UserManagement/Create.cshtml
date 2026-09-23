@@ -1,0 +1,79 @@
+@model WarehouseManagement.Models.UserManagement.CreateUserAccountViewModel
+@{
+    ViewData["Title"] = "Thêm tài khoản";
+}
+
+<div class="account-management py-3 py-lg-4">
+    <div class="d-flex align-items-center justify-content-between gap-3 mb-4">
+        <div>
+            <div class="text-uppercase text-primary fw-semibold small mb-1">Quản lý tài khoản</div>
+            <h1 class="h2 mb-1">Thêm tài khoản</h1>
+            <p class="text-secondary mb-0">Tạo người dùng mới và gán một vai trò phù hợp.</p>
+        </div>
+        <a asp-action="Index" class="btn btn-outline-secondary">Quay lại danh sách</a>
+    </div>
+
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-4 p-lg-5">
+            <form asp-action="Create" method="post" novalidate>
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+                <div class="row g-4">
+                    <div class="col-12 col-lg-6">
+                        <label asp-for="FullName" class="form-label fw-semibold"></label>
+                        <input asp-for="FullName" class="form-control" autocomplete="name" />
+                        <span asp-validation-for="FullName" class="text-danger small"></span>
+                    </div>
+                    <div class="col-12 col-lg-6">
+                        <label asp-for="UserName" class="form-label fw-semibold"></label>
+                        <input asp-for="UserName" class="form-control" autocomplete="username" />
+                        <span asp-validation-for="UserName" class="text-danger small"></span>
+                    </div>
+                    <div class="col-12 col-lg-6">
+                        <label asp-for="Email" class="form-label fw-semibold"></label>
+                        <input asp-for="Email" class="form-control" autocomplete="email" />
+                        <span asp-validation-for="Email" class="text-danger small"></span>
+                    </div>
+                    <div class="col-12 col-lg-6">
+                        <label asp-for="Role" class="form-label fw-semibold"></label>
+                        <select asp-for="Role" class="form-select">
+                            <option value="">Chọn vai trò</option>
+                            @foreach (var roleName in Model.AvailableRoles)
+                            {
+                                <option value="@roleName">@roleName</option>
+                            }
+                        </select>
+                        <span asp-validation-for="Role" class="text-danger small"></span>
+                    </div>
+                    <div class="col-12 col-lg-6">
+                        <label asp-for="Password" class="form-label fw-semibold"></label>
+                        <input asp-for="Password" class="form-control" autocomplete="new-password" />
+                        <div class="form-text">Tối thiểu 6 ký tự, gồm chữ hoa, chữ thường, chữ số và ký tự đặc biệt.</div>
+                        <span asp-validation-for="Password" class="text-danger small"></span>
+                    </div>
+                    <div class="col-12 col-lg-6">
+                        <label asp-for="ConfirmPassword" class="form-label fw-semibold"></label>
+                        <input asp-for="ConfirmPassword" class="form-control" autocomplete="new-password" />
+                        <span asp-validation-for="ConfirmPassword" class="text-danger small"></span>
+                    </div>
+                    <div class="col-12">
+                        <div class="form-check form-switch">
+                            <input asp-for="IsActive" class="form-check-input" />
+                            <label asp-for="IsActive" class="form-check-label fw-semibold"></label>
+                        </div>
+                        <div class="form-text">Nếu tắt, tài khoản vẫn được tạo nhưng chưa thể đăng nhập.</div>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
+                    <a asp-action="Index" class="btn btn-outline-secondary">Hủy</a>
+                    <button type="submit" class="btn btn-primary">Tạo tài khoản</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

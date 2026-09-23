@@ -1,0 +1,25 @@
+@model WarehouseManagement.Models.Reporting.ReportFilterViewModel
+@{
+    var action = (string?)ViewData["FilterAction"] ?? "Dashboard";
+    var isReport = action == "Index";
+}
+<form asp-controller="Reports" asp-action="@action" method="get" class="card border-0 shadow-sm mb-4">
+    <div class="card-body row g-3 align-items-end">
+        <div class="col-lg-2 col-md-4"><label class="form-label" for="fromDate">Từ ngày (UTC)</label><input id="fromDate" name="fromDate" type="date" class="form-control" value="@Model.FromDate" /></div>
+        <div class="col-lg-2 col-md-4"><label class="form-label" for="toDate">Đến ngày (UTC)</label><input id="toDate" name="toDate" type="date" class="form-control" value="@Model.ToDate" /></div>
+        <div class="col-lg-3 col-md-4"><label class="form-label" for="productId">Hàng hóa</label><select id="productId" name="productId" class="form-select"><option value="">Tất cả hàng hóa</option>@foreach (var product in Model.Products) { <option value="@product.Id" selected="@(Model.ProductId == product.Id)">@product.Text</option> }</select></div>
+        <div class="col-lg-3 col-md-4"><label class="form-label" for="categoryId">Danh mục</label><select id="categoryId" name="categoryId" class="form-select"><option value="">Tất cả danh mục</option>@foreach (var category in Model.Categories) { <option value="@category.Id" selected="@(Model.CategoryId == category.Id)">@category.Text</option> }</select></div>
+        <div class="col-lg-2 col-md-4"><label class="form-label" for="isActive">Trạng thái hàng hóa</label><select id="isActive" name="isActive" class="form-select"><option value="">Tất cả</option><option value="true" selected="@(Model.IsActive == true)">Đang hoạt động</option><option value="false" selected="@(Model.IsActive == false)">Ngừng hoạt động</option></select></div>
+        @if (isReport)
+        {
+            <div class="col-lg-4 col-md-6"><label class="form-label" for="searchTerm">Tìm mã hoặc tên hàng hóa</label><input id="searchTerm" name="searchTerm" class="form-control" maxlength="200" value="@Model.SearchTerm" /></div>
+            <div class="col-lg-3 col-md-6"><label class="form-label" for="sortBy">Sắp xếp</label><select id="sortBy" name="sortBy" class="form-select"><option value="code" selected="@(Model.SortBy == "code")">Mã hàng</option><option value="import" selected="@(Model.SortBy == "import")">Nhập nhiều nhất</option><option value="export" selected="@(Model.SortBy == "export")">Xuất nhiều nhất</option></select></div>
+        }
+        else
+        {
+            <div class="col-lg-3 col-md-6"><label class="form-label" for="groupBy">Thống kê thời gian</label><select id="groupBy" name="groupBy" class="form-select"><option value="day" selected="@(Model.GroupBy == "day")">Theo ngày</option><option value="month" selected="@(Model.GroupBy == "month")">Theo tháng</option></select></div>
+        }
+        <div class="col-lg-3 col-md-6 d-flex gap-2"><button type="submit" class="btn btn-primary">Áp dụng bộ lọc</button><a asp-controller="Reports" asp-action="@action" class="btn btn-outline-secondary">Xóa lọc</a></div>
+        @if (!ViewData.ModelState.IsValid) { <div class="col-12 text-danger" asp-validation-summary="All"></div> }
+    </div>
+</form>

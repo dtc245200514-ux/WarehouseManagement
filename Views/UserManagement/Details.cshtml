@@ -1,0 +1,122 @@
+@model WarehouseManagement.Models.UserManagement.UserAccountDetailsViewModel
+@{
+    ViewData["Title"] = "Chi tiết tài khoản";
+}
+
+<div class="account-management py-3 py-lg-4">
+    <div class="d-flex align-items-center justify-content-between gap-3 mb-4">
+        <div>
+            <div class="text-uppercase text-primary fw-semibold small mb-1">Quản lý tài khoản</div>
+            <h1 class="h2 mb-1">Chi tiết tài khoản</h1>
+            <p class="text-secondary mb-0">Thông tin chỉ đọc của người dùng trong hệ thống.</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-primary">Chỉnh sửa</a>
+            <a asp-action="Index" class="btn btn-outline-secondary">Quay lại danh sách</a>
+        </div>
+    </div>
+
+    @if (TempData["SuccessMessage"] is string successMessage)
+    {
+        <div class="alert alert-success" role="alert">@successMessage</div>
+    }
+    @if (TempData["ErrorMessage"] is string errorMessage)
+    {
+        <div class="alert alert-danger" role="alert">@errorMessage</div>
+    }
+    @if (TempData["InfoMessage"] is string infoMessage)
+    {
+        <div class="alert alert-info" role="alert">@infoMessage</div>
+    }
+
+    <div class="row g-4">
+        <div class="col-12 col-lg-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body p-4 text-center">
+                    <div class="account-avatar mx-auto mb-3" aria-hidden="true">
+                        @(string.IsNullOrWhiteSpace(Model.FullName) ? "?" : Model.FullName[..1].ToUpperInvariant())
+                    </div>
+                    <h2 class="h4 mb-1">@Model.FullName</h2>
+                    <p class="text-secondary mb-3">@Model.Email</p>
+                    @if (Model.IsActive)
+                    {
+                        <span class="badge rounded-pill text-bg-success">Hoạt động</span>
+                    }
+                    else
+                    {
+                        <span class="badge rounded-pill text-bg-secondary">Không hoạt động</span>
+                    }
+
+                    <div class="mt-4 pt-4 border-top">
+                        @if (Model.IsActive)
+                        {
+                            if (Model.IsCurrentUser)
+                            {
+                                <button type="button" class="btn btn-outline-danger w-100" disabled>Không thể tự khóa</button>
+                            }
+                            else
+                            {
+                                <form asp-action="Lock" asp-route-id="@Model.Id" method="post"
+                                      onsubmit="return confirm('Bạn có chắc chắn muốn khóa tài khoản này?');">
+                                    <button type="submit" class="btn btn-outline-danger w-100">Khóa tài khoản</button>
+                                </form>
+                            }
+                        }
+                        else
+                        {
+                            <form asp-action="Unlock" asp-route-id="@Model.Id" method="post"
+                                  onsubmit="return confirm('Bạn có chắc chắn muốn mở khóa tài khoản này?');">
+                                <button type="submit" class="btn btn-outline-success w-100">Mở khóa tài khoản</button>
+                            </form>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-lg-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0 px-4 pt-4">
+                    <h2 class="h5 mb-0">Thông tin tài khoản</h2>
+                </div>
+                <div class="card-body p-4">
+                    <dl class="row account-details mb-0">
+                        <dt class="col-sm-4">Họ và tên</dt>
+                        <dd class="col-sm-8">@Model.FullName</dd>
+
+                        <dt class="col-sm-4">Tên đăng nhập</dt>
+                        <dd class="col-sm-8"><span class="font-monospace">@Model.UserName</span></dd>
+
+                        <dt class="col-sm-4">Email</dt>
+                        <dd class="col-sm-8">@Model.Email</dd>
+
+                        <dt class="col-sm-4">Vai trò</dt>
+                        <dd class="col-sm-8">
+                            @if (Model.Roles.Count == 0)
+                            {
+                                <span class="badge text-bg-secondary">Chưa gán</span>
+                            }
+                            else
+                            {
+                                @foreach (var roleName in Model.Roles)
+                                {
+                                    <span class="badge text-bg-primary me-1">@roleName</span>
+                                }
+                            }
+                        </dd>
+
+                        <dt class="col-sm-4">Ngày tạo</dt>
+                        <dd class="col-sm-8">@Model.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</dd>
+
+                        <dt class="col-sm-4">Cập nhật gần nhất</dt>
+                        <dd class="col-sm-8">
+                            @(Model.UpdatedAt.HasValue
+                                ? Model.UpdatedAt.Value.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
+                                : "Chưa cập nhật")
+                        </dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

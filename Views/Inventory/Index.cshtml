@@ -1,0 +1,114 @@
+@using WarehouseManagement.Models.InventoryManagement
+@model InventoryIndexViewModel
+
+@functions {
+    private static string StockText(StockLevelStatus status) => status switch
+    {
+        StockLevelStatus.OutOfStock => "Hết hàng",
+        StockLevelStatus.LowStock => "Sắp hết",
+        _ => "Còn hàng"
+    };
+
+    private static string StockBadge(StockLevelStatus status) => status switch
+    {
+        StockLevelStatus.OutOfStock => "text-bg-danger",
+        StockLevelStatus.LowStock => "text-bg-warning",
+        _ => "text-bg-success"
+    };
+}
+
+@{
+    ViewData["Title"] = "Quản lý tồn kho";
+}
+
+<div class="inventory-management">
+    <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
+        <div><h1 class="h3 mb-1">Quản lý tồn kho</h1>
+        <p class="text-muted mb-0">Tồn hiện tại của @Model.TotalCount hàng hóa phù hợp. Phiếu Nháp không làm thay đổi tồn kho.</p></div>
+        <a asp-action="Transactions" class="btn btn-outline-primary">Lịch sử giao dịch</a>
+    </div>
+
+    <form asp-action="Index" method="get" class="card border-0 shadow-sm mb-4">
+        <div class="card-body row g-3 align-items-end">
+            <div class="col-lg-5 col-md-6">
+                <label for="searchTerm" class="form-label">Mã hoặc tên hàng hóa</label>
+                <input id="searchTerm" name="searchTerm" class="form-control" value="@Model.SearchTerm" maxlength="200" placeholder="Tìm theo mã hoặc tên" />
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <label for="categoryId" class="form-label">Danh mục</label>
+                <select id="categoryId" name="categoryId" class="form-select">
+                    <option value="">Tất cả danh mục</option>
+                    @foreach (var category in Model.Categories)
+                    {
+                        <option value="@category.Id" selected="@(Model.CategoryId == category.Id)">@category.Name</option>
+                    }
+                </select>
+            </div>
+            <div class="col-lg-2 col-md-6">
+                <label for="stockStatus" class="form-label">Trạng thái tồn</label>
+                <select id="stockStatus" name="stockStatus" class="form-select">
+                    <option value="">Tất cả</option>
+                    @foreach (var status in Enum.GetValues<StockLevelStatus>())
+                    {
+                        <option value="@status" selected="@(Model.StockStatus == status)">@StockText(status)</option>
+                    }
+                </select>
+            </div>
+            <div class="col-lg-2 col-md-6 d-flex gap-2">
+                <button type="submit" class="btn btn-primary">Tìm và lọc</button>
+                <a asp-action="Index" class="btn btn-outline-secondary">Xóa lọc</a>
+            </div>
+            @if (!ViewData.ModelState.IsValid)
+            {
+                <div class="col-12 text-danger" asp-validation-summary="All"></div>
+            }
+        </div>
+    </form>
+
+    <div class="card border-0 shadow-sm">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead><tr><th>STT</th><th>Mã hàng</th><th>Tên hàng hóa</th><th>Danh mục</th><th>Đơn vị</th><th class="text-end">Tồn hiện tại</th><th class="text-end">Tồn tối thiểu</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
+                <tbody>
+                    @if (Model.Products.Count == 0)
+                    {
+                        <tr><td colspan="9" class="text-center text-muted py-5">Không có hàng hóa phù hợp với điều kiện tìm kiếm.</td></tr>
+                    }
+                    else
+                    {
+                        @for (var index = 0; index < Model.Products.Count; index++)
+                        {
+                            var product = Model.Products[index];
+                            <tr>
+                                <td>@((Model.Page - 1) * 20 + index + 1)</td>
+                                <td class="fw-semibold">@product.Code</td>
+                                <td>@product.Name @if (!product.IsActive) { <span class="badge text-bg-secondary">Ngừng hoạt động</span> }</td>
+                                <td>@product.CategoryName</td>
+                                <td>@product.Unit</td>
+                                <td class="text-end fw-semibold">@product.CurrentQuantity.ToString("N3")</td>
+                                <td class="text-end">@product.MinimumStockLevel.ToString("N3")</td>
+                                <td><span class="badge @StockBadge(product.StockStatus)">@StockText(product.StockStatus)</span></td>
+                                <td><a asp-action="Details" asp-route-id="@product.Id" class="btn btn-outline-primary btn-sm">Xem chi tiết</a></td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+        @if (Model.TotalPages > 1)
+        {
+            <nav class="card-body d-flex flex-wrap align-items-center gap-2" aria-label="Phân trang hàng tồn kho">
+                <span>Trang @Model.Page / @Model.TotalPages</span>
+                @if (Model.Page > 1)
+                {
+                    <a asp-action="Index" asp-route-page="@(Model.Page - 1)" asp-route-searchTerm="@Model.SearchTerm" asp-route-categoryId="@Model.CategoryId" asp-route-stockStatus="@Model.StockStatus" class="btn btn-outline-secondary btn-sm">Trang trước</a>
+                }
+                @if (Model.Page < Model.TotalPages)
+                {
+                    <a asp-action="Index" asp-route-page="@(Model.Page + 1)" asp-route-searchTerm="@Model.SearchTerm" asp-route-categoryId="@Model.CategoryId" asp-route-stockStatus="@Model.StockStatus" class="btn btn-outline-secondary btn-sm">Trang sau</a>
+                }
+            </nav>
+        }
+    </div>
+    <p class="small text-muted mt-3">Hết hàng: tồn = 0. Sắp hết: tồn &gt; 0 và ≤ mức tối thiểu. Còn hàng: tồn &gt; mức tối thiểu.</p>
+</div>
