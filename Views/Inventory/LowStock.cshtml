@@ -1,0 +1,92 @@
+@using WarehouseManagement.Authorization
+@using WarehouseManagement.Models.InventoryManagement
+@using Microsoft.AspNetCore.Authorization
+@inject IAuthorizationService AuthorizationService
+@model LowStockViewModel
+@{
+    ViewData["Title"] = "Cảnh báo tồn kho";
+    var canExport = (await AuthorizationService.AuthorizeAsync(User, ApplicationPolicies.ViewReports)).Succeeded;
+}
+<div class="inventory-management">
+    <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
+        <div><h1 class="h3 mb-1">Cảnh báo tồn kho</h1><p class="text-muted mb-0">Chỉ hàng hóa đang hoạt động. Số lượng lấy từ tồn kho hiện tại.</p></div>
+        <a asp-action="Index" class="btn btn-outline-secondary">Toàn bộ tồn kho</a>
+    </div>
+    <form asp-action="LowStock" method="get" class="card border-0 shadow-sm mb-4">
+        <div class="card-body row g-3 align-items-end">
+            <div class="col-lg-4 col-md-6">
+                <label for="searchTerm" class="form-label">Mã hoặc tên hàng hóa</label>
+                <input id="searchTerm" name="searchTerm" class="form-control" maxlength="200" value="@Model.SearchTerm" />
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <label for="categoryId" class="form-label">Danh mục</label>
+                <select id="categoryId" name="categoryId" class="form-select">
+                    <option value="">Tất cả danh mục</option>
+                    @foreach (var category in Model.Categories)
+                    { <option value="@category.Id" selected="@(Model.CategoryId == category.Id)">@category.Name</option> }
+                </select>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <label for="stockStatus" class="form-label">Trạng thái cảnh báo</label>
+                <select id="stockStatus" name="stockStatus" class="form-select">
+                    <option value="">Tất cả cảnh báo</option>
+                    <option value="OutOfStock" selected="@(Model.StockStatus == StockLevelStatus.OutOfStock)">Hết hàng</option>
+                    <option value="LowStock" selected="@(Model.StockStatus == StockLevelStatus.LowStock)">Chạm hoặc dưới mức tối thiểu</option>
+                </select>
+            </div>
+            <div class="col-lg-2 col-md-6 d-flex flex-wrap gap-2">
+                <button type="submit" class="btn btn-primary">Lọc</button>
+                <a asp-action="LowStock" class="btn btn-outline-secondary">Xóa lọc</a>
+            </div>
+            @if (!ViewData.ModelState.IsValid)
+            { <div class="col-12 text-danger" asp-validation-summary="All" role="alert"></div> }
+        </div>
+    </form>
+    @if (ViewData.ModelState.IsValid)
+    {
+        <div class="row g-3 mb-4" aria-label="Tổng hợp theo bộ lọc">
+            <div class="col-md-4"><div class="card border-0 shadow-sm"><div class="card-body"><div>Tổng mặt hàng cảnh báo</div><strong class="h3" data-count="total">@Model.TotalCount</strong></div></div></div>
+            <div class="col-md-4"><div class="card border-0 shadow-sm"><div class="card-body"><div>Hết hàng</div><strong class="h3 text-danger" data-count="out">@Model.OutOfStockCount</strong></div></div></div>
+            <div class="col-md-4"><div class="card border-0 shadow-sm"><div class="card-body"><div>Chạm hoặc dưới mức tối thiểu</div><strong class="h3" data-count="low">@Model.LowStockCount</strong></div></div></div>
+        </div>
+        @if (canExport)
+        {
+            <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+                <a asp-action="ExportLowStock" asp-route-searchTerm="@Model.SearchTerm" asp-route-categoryId="@Model.CategoryId" asp-route-stockStatus="@Model.StockStatus" class="btn btn-outline-primary">Xuất CSV theo bộ lọc</a>
+                <span class="small text-muted">Xuất toàn bộ kết quả lọc (tối đa 10.000 hàng); không có kết quả sẽ xuất dòng tiêu đề.</span>
+            </div>
+        }
+        <div class="card border-0 shadow-sm">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead><tr><th>Mã hàng hóa</th><th>Tên hàng hóa</th><th>Danh mục</th><th>Đơn vị</th><th class="text-end">Tồn hiện tại</th><th class="text-end">Mức tối thiểu</th><th class="text-end">Chênh lệch</th><th>Trạng thái cảnh báo</th><th>Chi tiết</th></tr></thead>
+                    <tbody>
+                        @if (Model.Products.Count == 0)
+                        { <tr><td colspan="9" class="text-center text-muted py-5">Không có hàng hóa cảnh báo phù hợp với bộ lọc.</td></tr> }
+                        @foreach (var product in Model.Products)
+                        {
+                            <tr data-product-id="@product.Id">
+                                <td class="fw-semibold">@product.Code</td><td>@product.Name</td><td>@product.CategoryName</td><td>@product.Unit</td>
+                                <td class="text-end">@product.CurrentQuantity.ToString("N3")</td><td class="text-end">@product.MinimumStockLevel.ToString("N3")</td>
+                                <td class="text-end">@((product.CurrentQuantity - product.MinimumStockLevel).ToString("N3"))</td>
+                                <td><span class="badge @(product.StockStatus == StockLevelStatus.OutOfStock ? "text-bg-danger" : "text-bg-warning")">@StockLevelRules.Label(product.StockStatus)</span></td>
+                                <td><a asp-action="Details" asp-route-id="@product.Id" class="btn btn-outline-primary btn-sm">Xem chi tiết</a></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            @if (Model.TotalPages > 1)
+            {
+                <nav class="card-body d-flex flex-wrap gap-2 align-items-center" aria-label="Phân trang cảnh báo">
+                    <span>Trang @Model.Page / @Model.TotalPages</span>
+                    @if (Model.Page > 1)
+                    { <a asp-action="LowStock" asp-route-page="@(Model.Page - 1)" asp-route-searchTerm="@Model.SearchTerm" asp-route-categoryId="@Model.CategoryId" asp-route-stockStatus="@Model.StockStatus" class="btn btn-outline-secondary btn-sm">Trang trước</a> }
+                    @if (Model.Page < Model.TotalPages)
+                    { <a asp-action="LowStock" asp-route-page="@(Model.Page + 1)" asp-route-searchTerm="@Model.SearchTerm" asp-route-categoryId="@Model.CategoryId" asp-route-stockStatus="@Model.StockStatus" class="btn btn-outline-secondary btn-sm">Trang sau</a> }
+                </nav>
+            }
+        </div>
+    }
+    <p class="small text-muted mt-3">Quy tắc hiện hành: hết hàng khi tồn = 0; sắp hết khi tồn &gt; 0 và ≤ mức tối thiểu (kể cả bằng ngưỡng). Chênh lệch = tồn hiện tại − mức tối thiểu. Hàng ngừng hoạt động không nằm trong cảnh báo.</p>
+</div>

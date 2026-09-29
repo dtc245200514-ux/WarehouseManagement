@@ -11,7 +11,7 @@ using WarehouseManagement.Models.InventoryManagement;
 namespace WarehouseManagement.Controllers;
 
 [Authorize(Policy = ApplicationPolicies.ViewInventory)]
-public class InventoryController(ApplicationDbContext context) : Controller
+public partial class InventoryController(ApplicationDbContext context, ILogger<InventoryController> logger) : Controller
 {
     private const int PageSize = 20;
     private const int MaximumSearchLength = 200;
@@ -239,14 +239,7 @@ public class InventoryController(ApplicationDbContext context) : Controller
             else
             {
                 selectedStockStatus = parsedStatus;
-                query = parsedStatus switch
-                {
-                    StockLevelStatus.OutOfStock => query.Where(product => product.CurrentQuantity == 0m),
-                    StockLevelStatus.LowStock => query.Where(product =>
-                        product.CurrentQuantity > 0m &&
-                        product.CurrentQuantity <= product.MinimumStockLevel),
-                    _ => query.Where(product => product.CurrentQuantity > product.MinimumStockLevel)
-                };
+                query = query.WithStatus(parsedStatus);
             }
         }
 
@@ -280,11 +273,7 @@ public class InventoryController(ApplicationDbContext context) : Controller
                 CurrentQuantity = product.CurrentQuantity,
                 MinimumStockLevel = product.MinimumStockLevel,
                 IsActive = product.IsActive,
-                StockStatus = product.CurrentQuantity == 0m
-                    ? StockLevelStatus.OutOfStock
-                    : product.CurrentQuantity <= product.MinimumStockLevel
-                        ? StockLevelStatus.LowStock
-                        : StockLevelStatus.InStock
+                StockStatus = StockLevelRules.Classify(product.CurrentQuantity, product.MinimumStockLevel)
             })
             .ToListAsync(cancellationToken);
 
@@ -435,7 +424,7 @@ public class InventoryController(ApplicationDbContext context) : Controller
             CurrentQuantity = product.CurrentQuantity,
             MinimumStockLevel = product.MinimumStockLevel,
             IsActive = product.IsActive,
-            StockStatus = GetStockStatus(product.CurrentQuantity, product.MinimumStockLevel),
+            StockStatus = StockLevelRules.Classify(product.CurrentQuantity, product.MinimumStockLevel),
             PostedImportQuantity = summary?.PostedImportQuantity ?? 0m,
             PostedExportQuantity = summary?.PostedExportQuantity ?? 0m,
             LedgerQuantity = ledgerQuantity,
@@ -449,7 +438,4 @@ public class InventoryController(ApplicationDbContext context) : Controller
         });
     }
 
-    private static StockLevelStatus GetStockStatus(decimal quantity, decimal minimum) =>
-        quantity == 0m ? StockLevelStatus.OutOfStock :
-        quantity <= minimum ? StockLevelStatus.LowStock : StockLevelStatus.InStock;
 }

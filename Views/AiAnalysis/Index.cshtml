@@ -1,0 +1,95 @@
+@model WarehouseManagement.Models.AiAnalysis.AiAnalysisViewModel
+@{
+    ViewData["Title"] = "Phân tích kho bằng AI";
+}
+<div class="warehouse-reports">
+    <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
+        <div><h1 class="h3 mb-1">Phân tích kho bằng AI</h1><p class="text-muted mb-0">Số liệu do hệ thống tính toán; AI hỗ trợ diễn giải, không thay đổi dữ liệu kho.</p></div>
+        <a asp-controller="Reports" asp-action="Index" class="btn btn-outline-secondary">Báo cáo nhập–xuất–tồn</a>
+    </div>
+    <form asp-action="Index" method="get" class="card border-0 shadow-sm mb-3">
+        <div class="card-body row g-3 align-items-end">
+            <div class="col-md-4"><label for="fromDate" class="form-label">Từ ngày (UTC)</label><input id="fromDate" name="fromDate" value="@Model.FromDate" type="date" class="form-control" /></div>
+            <div class="col-md-4"><label for="toDate" class="form-label">Đến ngày (UTC)</label><input id="toDate" name="toDate" value="@Model.ToDate" type="date" class="form-control" /></div>
+            <div class="col-md-4 d-flex flex-wrap gap-2"><button type="submit" class="btn btn-primary">Xem số liệu</button><a asp-action="Index" class="btn btn-outline-secondary">Xóa lọc</a></div>
+            <div class="col-12 small text-muted">Bao gồm trọn hai ngày theo UTC. Để trống để xem toàn bộ lịch sử. Phạm vi: toàn bộ hàng hóa trong quyền báo cáo.</div>
+            @if (!ViewData.ModelState.IsValid) { <div class="col-12 text-danger" asp-validation-summary="All" role="alert"></div> }
+        </div>
+    </form>
+    <p class="small">Chế độ: <strong>@Model.Mode</strong></p>
+    @if (Model.ConfigurationMessage is not null) { <div class="alert alert-warning" role="status">@Model.ConfigurationMessage</div> }
+    @if (Model.ErrorMessage is not null) { <div class="alert alert-warning" role="alert">@Model.ErrorMessage <span>AI chưa thể tạo phần phân tích. Số liệu hệ thống được hiển thị riêng bên dưới nếu đã tổng hợp thành công.</span></div> }
+    @if (Model.Data is { } data)
+    {
+        <div class="card border-0 shadow-sm mb-3"><div class="card-body">
+            <h2 class="h5">Số liệu chính thức từ hệ thống</h2>
+            <p class="small text-muted">Thời điểm tổng hợp: @data.SnapshotAtUtc.ToString("dd/MM/yyyy HH:mm:ss") UTC. Tồn hiện tại không đổi theo khoảng ngày; tổng số lượng có thể gồm nhiều đơn vị tính.</p>
+            <dl class="row mb-0">
+                <dt class="col-sm-6">Số hàng hóa</dt><dd class="col-sm-6" data-metric="products">@data.ProductCount</dd>
+                <dt class="col-sm-6">Nhập trong kỳ</dt><dd class="col-sm-6" data-metric="import">@data.ImportedQuantity.ToString("N3")</dd>
+                <dt class="col-sm-6">Xuất trong kỳ</dt><dd class="col-sm-6" data-metric="export">@data.ExportedQuantity.ToString("N3")</dd>
+                <dt class="col-sm-6">Tồn đầu kỳ</dt><dd class="col-sm-6" data-metric="opening">@data.OpeningQuantity.ToString("N3")</dd>
+                <dt class="col-sm-6">Tồn cuối kỳ</dt><dd class="col-sm-6" data-metric="closing">@data.ClosingQuantity.ToString("N3")</dd>
+                <dt class="col-sm-6">Tồn hiện tại</dt><dd class="col-sm-6" data-metric="current">@data.CurrentQuantity.ToString("N3")</dd>
+                <dt class="col-sm-6">Biến động khác trong kỳ</dt><dd class="col-sm-6" data-metric="other">@data.OtherChange.ToString("N3")</dd>
+                <dt class="col-sm-6">Chênh lệch tồn cuối–đầu (tổng nhiều đơn vị)</dt><dd class="col-sm-6" data-metric="net-change">@data.NetStockChange.ToString("N3")</dd>
+                <dt class="col-sm-6">Số phiếu nhập / xuất Posted</dt><dd class="col-sm-6">@data.ImportReceiptCount / @data.ExportReceiptCount</dd>
+                <dt class="col-sm-6">Cảnh báo hiện tại / hết hàng</dt><dd class="col-sm-6">@data.AlertCount / @data.OutOfStockCount</dd>
+            </dl>
+            @if (data.ImportReceiptCount == 0 && data.ExportReceiptCount == 0)
+            { <p class="text-muted mt-3 mb-0">Không có giao dịch nhập/xuất Posted trong kỳ. Cần phân biệt biến động khác, tồn đầu/cuối và tồn hiện tại.</p> }
+        </div></div>
+        <details class="mb-3"><summary>Dữ liệu tổng hợp và giới hạn gửi cho AI</summary>
+            <ul class="small mt-2">@foreach (var limit in data.Limitations) { <li>@limit</li> }</ul>
+            <h3 class="h6">Hàng có biến động lớn (tối đa 10)</h3>
+            <div class="table-responsive"><table class="table table-sm"><thead><tr><th>Mã</th><th>Tên</th><th>Đơn vị</th><th>Nhập</th><th>Xuất</th></tr></thead><tbody>
+                @foreach (var row in data.TopMovements) { <tr><td>@row.Code</td><td>@row.Name</td><td>@row.Unit</td><td>@row.ImportedQuantity.ToString("N3")</td><td>@row.ExportedQuantity.ToString("N3")</td></tr> }
+            </tbody></table></div>
+            <h3 class="h6">Cảnh báo hiện tại (tối đa 10)</h3>
+            <div class="table-responsive"><table class="table table-sm"><thead><tr><th>Mã</th><th>Tên</th><th>Đơn vị</th><th>Tồn</th><th>Ngưỡng</th></tr></thead><tbody>
+                @foreach (var row in data.LowStock) { <tr><td>@row.Code</td><td>@row.Name</td><td>@row.Unit</td><td>@row.CurrentQuantity.ToString("N3")</td><td>@row.MinimumStockLevel.ToString("N3")</td></tr> }
+            </tbody></table></div>
+        </details>
+        <section class="card border-0 shadow-sm mb-3" aria-labelledby="replenishment-heading">
+            <div class="card-body">
+                <h2 class="h5" id="replenishment-heading">Đề xuất nhập thêm hàng</h2>
+                <p>Đây là đề xuất hỗ trợ; không tự động tạo phiếu nhập hoặc thay đổi tồn kho.</p>
+                <p class="small text-muted">Danh sách do hệ thống xác định từ hàng đang hoạt động có tồn hiện tại thấp hơn mức tối thiểu; không phụ thuộc bộ lọc ngày. Chênh lệch không phải số lượng phải nhập.</p>
+                <p>Dưới mức tối thiểu: <strong data-metric="below-minimum">@data.BelowMinimumCount</strong> mã; hết hàng trong danh sách này: <strong>@data.ReplenishmentOutOfStockCount</strong> mã. Tổng hết hàng hiện tại: @data.OutOfStockCount mã.</p>
+                @if (data.BelowMinimumCount == 0)
+                { <p role="status">Hiện không có mặt hàng dưới mức tồn tối thiểu theo dữ liệu hệ thống.</p> }
+                else
+                {
+                    <div class="table-responsive"><table class="table table-sm" id="replenishment-table">
+                        <thead><tr><th>Mã</th><th>Tên</th><th>Đơn vị</th><th>Tồn hiện tại</th><th>Mức tối thiểu</th><th>Chênh lệch so với mức tối thiểu</th></tr></thead>
+                        <tbody>@foreach (var row in data.ReplenishmentCandidates)
+                        { <tr><td>@row.Code</td><td>@row.Name</td><td>@row.Unit</td><td>@row.CurrentQuantity.ToString("N3")</td><td>@row.MinimumStockLevel.ToString("N3")</td><td>@row.MinimumShortfall.ToString("N3")</td></tr> }</tbody>
+                    </table></div>
+                }
+                <p class="small text-muted">Danh sách trên hiển thị đầy đủ @data.BelowMinimumCount mã phù hợp. AI nhận tối đa 50 mã (@data.ReplenishmentSample.Count mã lần này).</p>
+                @if (Model.Report is null) { <p>Chưa có nhận xét AI cho lần xem này. Danh sách và số liệu hệ thống vẫn được hiển thị khi AI chưa sẵn sàng.</p> }
+                else { <p>Nhận xét AI nằm ở mục 7 “Đề xuất nhập thêm hàng” trong báo cáo bên dưới; chỉ mang tính tham khảo.</p> }
+            </div>
+        </section>
+        @if (Model.ConfigurationMessage is null && data.ProductCount > 0)
+        {
+            <form asp-action="Generate" method="post" id="ai-analysis-form" class="mb-4">
+                <input type="hidden" name="fromDate" value="@Model.FromDate" /><input type="hidden" name="toDate" value="@Model.ToDate" />
+                <p class="small text-muted">Khi tạo báo cáo, hệ thống gửi số liệu tổng hợp và các mặt hàng giới hạn ở trên tới nhà cung cấp AI đang chọn: @Model.Mode. Dữ liệu sẽ được lấy lại trước khi gửi. Mock không gửi dữ liệu ra ngoài. Cấu hình hợp lệ chưa chứng minh API hoạt động; với Gemini, hệ thống kiểm tra model trước khi gửi báo cáo.</p>
+                <button type="submit" class="btn btn-primary" id="ai-generate">@(Model.Report is null ? "Tạo báo cáo phân tích" : "Tạo lại báo cáo")</button>
+                <span id="ai-progress" class="ms-2" role="status" hidden>Đang tạo báo cáo, vui lòng chờ…</span>
+            </form>
+        }
+    }
+    @if (Model.Report is not null)
+    {
+        <div class="card border-0 shadow-sm"><div class="card-body">
+            <h2 class="h5">@(Model.IsMock ? "Báo cáo kiểm thử Mock" : "Báo cáo phân tích AI")</h2>
+            <h3 class="h6">Tóm tắt biến động kho</h3>
+            <p class="small text-muted">Mục đầu của báo cáo tóm tắt biến động từ số liệu chính thức. @(Model.IsMock ? "Đây là nội dung giả lập để kiểm thử, không phải AI thật." : "Đây là diễn giải do AI tạo, không phải số liệu mới.") Không có kỳ trước để so sánh nhập/xuất; đề xuất xem xét nhập thêm được tách ở mục 7.</p>
+            <p class="small text-muted">Tạo lúc @Model.GeneratedAtUtc?.ToString("dd/MM/yyyy HH:mm:ss") UTC. Nội dung diễn giải chỉ để tham khảo; đối chiếu với số liệu chính thức ở trên.</p>
+            <div class="ai-analysis-text">@Model.Report</div>
+        </div></div>
+    }
+</div>
+@section Scripts { <script src="~/js/ai-analysis.js" asp-append-version="true"></script> }

@@ -25,7 +25,7 @@
     <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
         <div><h1 class="h3 mb-1">Quản lý tồn kho</h1>
         <p class="text-muted mb-0">Tồn hiện tại của @Model.TotalCount hàng hóa phù hợp. Phiếu Nháp không làm thay đổi tồn kho.</p></div>
-        <a asp-action="Transactions" class="btn btn-outline-primary">Lịch sử giao dịch</a>
+        <div class="d-flex flex-wrap gap-2"><a asp-action="LowStock" class="btn btn-outline-warning">Cảnh báo tồn kho</a><a asp-action="Transactions" class="btn btn-outline-primary">Lịch sử giao dịch</a></div>
     </div>
 
     <form asp-action="Index" method="get" class="card border-0 shadow-sm mb-4">

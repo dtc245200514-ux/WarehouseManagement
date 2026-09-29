@@ -4,6 +4,9 @@ using WarehouseManagement.Authorization;
 using WarehouseManagement.Data;
 using WarehouseManagement.Models;
 using WarehouseManagement.Options;
+using WarehouseManagement.Services.Ai;
+using System.Security.Claims;
+using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -84,6 +87,29 @@ builder.Services.AddAuthorization(options =>
 });
 
 builder.Services.AddControllersWithViews();
+builder.Services.Configure<AiOptions>(builder.Configuration.GetSection(AiOptions.SectionName));
+builder.Services.AddScoped<InventoryAnalysisDataService>();
+builder.Services.AddHttpClient<GeminiAnalysisAdapter>(client => client.Timeout = Timeout.InfiniteTimeSpan)
+    .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = false })
+    .RemoveAllLoggers();
+builder.Services.AddHttpClient<IAiAnalysisService, AiAnalysisService>(client =>
+    client.Timeout = Timeout.InfiniteTimeSpan)
+    .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = false })
+    .RemoveAllLoggers();
+builder.Services.AddRateLimiter(options =>
+{
+    options.AddPolicy("ai-analysis", httpContext => RateLimitPartition.GetFixedWindowLimiter(
+        httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous",
+        _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = 5, Window = TimeSpan.FromMinutes(1), QueueLimit = 0, AutoReplenishment = true
+        }));
+    options.OnRejected = async (context, token) =>
+    {
+        context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
+        await context.HttpContext.Response.WriteAsync("Bạn đã gửi quá nhiều yêu cầu phân tích. Vui lòng chờ một phút rồi thử lại.", token);
+    };
+});
 
 var app = builder.Build();
 
@@ -107,6 +133,7 @@ app.UseRouting();
 
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseRateLimiter();
 
 app.MapStaticAssets();
 

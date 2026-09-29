@@ -7,6 +7,8 @@ using WarehouseManagement.Data;
 using WarehouseManagement.Models;
 using WarehouseManagement.Models.Enums;
 using WarehouseManagement.Models.Reporting;
+using WarehouseManagement.Models.InventoryManagement;
+using WarehouseManagement.Services.Reporting;
 
 namespace WarehouseManagement.Controllers;
 
@@ -32,8 +34,8 @@ public class ReportsController(ApplicationDbContext context) : Controller
             ActiveProductCount = await products.CountAsync(p => p.IsActive, cancellationToken),
             CategoryCount = await context.Categories.AsNoTracking().CountAsync(cancellationToken),
             CurrentQuantity = await products.SumAsync(p => (decimal?)p.CurrentQuantity, cancellationToken) ?? 0m,
-            LowStockCount = await products.CountAsync(p => p.IsActive &&
-                p.CurrentQuantity <= p.MinimumStockLevel, cancellationToken),
+            LowStockCount = await products.Where(p => p.IsActive)
+                .CountAsync(StockLevelRules.IsAlert, cancellationToken),
             ImportedQuantity = await period.Where(t => t.TransactionType == InventoryTransactionType.Import)
                 .SumAsync(t => (decimal?)t.QuantityChange, cancellationToken) ?? 0m,
             ExportedQuantity = -(await period.Where(t => t.TransactionType == InventoryTransactionType.Export)
@@ -153,16 +155,7 @@ public class ReportsController(ApplicationDbContext context) : Controller
     private IQueryable<InventoryTransaction> PostedTransactions(
         IQueryable<Product> products, DateTime? fromUtc, DateTime? toExclusiveUtc)
     {
-        var productIds = products.Select(p => p.Id);
-        var query = context.InventoryTransactions.AsNoTracking()
-            .Where(t => productIds.Contains(t.ProductId) &&
-                ((t.TransactionType == InventoryTransactionType.Import &&
-                  t.ImportReceipt!.Status == ReceiptStatus.Posted) ||
-                 (t.TransactionType == InventoryTransactionType.Export &&
-                  t.ExportReceipt!.Status == ReceiptStatus.Posted)));
-        if (fromUtc.HasValue) query = query.Where(t => t.OccurredAt >= fromUtc.Value);
-        if (toExclusiveUtc.HasValue) query = query.Where(t => t.OccurredAt < toExclusiveUtc.Value);
-        return query;
+        return context.InventoryTransactions.AsNoTracking().PostedInPeriod(products, fromUtc, toExclusiveUtc);
     }
 
     private async Task<IReadOnlyList<ReportTimeBucketViewModel>> GetTimelineAsync(
@@ -254,7 +247,7 @@ public class ReportsController(ApplicationDbContext context) : Controller
             CategoryId = categoryId, IsActive = active, SearchTerm = searchTerm,
             SortBy = sortBy, GroupBy = groupBy,
             Products = products, Categories = categories
-        }, from, to?.AddDays(1));
+        }, from, to.HasValue && to.Value < DateTime.MaxValue.Date ? to.Value.AddDays(1) : null);
     }
 
     private DateTime? ParseUtcDate(string? value, string key)

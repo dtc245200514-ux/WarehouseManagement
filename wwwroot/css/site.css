@@ -162,3 +162,5 @@ body {
 
 .warehouse-reports .report-bar-import { background: #198754; }
 .warehouse-reports .report-bar-export { background: #0d6efd; }
+
+.ai-analysis-text { white-space: pre-wrap; overflow-wrap: anywhere; }

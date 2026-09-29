@@ -42,11 +42,15 @@
                             <li class="nav-item">
                                 <a class="nav-link text-dark" asp-area="" asp-controller="Reports" asp-action="Dashboard">Dashboard</a>
                             </li>
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-area="" asp-controller="Inventory" asp-action="LowStock">Cảnh báo tồn kho</a>
+                            </li>
                         }
                         @if (User.IsInRole(WarehouseManagement.Authorization.ApplicationRoles.Admin) ||
                             User.IsInRole(WarehouseManagement.Authorization.ApplicationRoles.Accountant))
                         {
                             <li class="nav-item"><a class="nav-link text-dark" asp-area="" asp-controller="Reports" asp-action="Index">Báo cáo N–X–T</a></li>
+                            <li class="nav-item"><a class="nav-link text-dark" asp-area="" asp-controller="AiAnalysis" asp-action="Index">Phân tích AI</a></li>
                         }
                         @if (User.IsInRole(WarehouseManagement.Authorization.ApplicationRoles.Admin) ||
                             User.IsInRole(WarehouseManagement.Authorization.ApplicationRoles.WarehouseStaff))
@@ -74,9 +78,12 @@
                     <ul class="navbar-nav align-items-sm-center">
                         @if (User.Identity?.IsAuthenticated == true)
                         {
+                            @if (!string.Equals(ViewContext.RouteData.Values["controller"]?.ToString(), "AiAnalysis", StringComparison.OrdinalIgnoreCase))
+                            {
                             <li class="nav-item">
                                 <span class="nav-link text-dark">@User.Identity.Name</span>
                             </li>
+                            }
                             <li class="nav-item">
                                 <form asp-area="" asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
                                     <button type="submit" class="btn btn-outline-danger btn-sm">Đăng xuất</button>
