@@ -18,9 +18,11 @@ public sealed class InventoryAnalysisDataService(ApplicationDbContext context)
             throw new AnalysisDataException("Khoảng thời gian không hợp lệ.");
         // A short, read-only consistent snapshot. Release locks before any provider request.
         await using var transaction = await context.Database.BeginTransactionAsync(IsolationLevel.Serializable, cancellationToken);
+        var snapshotAtUtc = DateTime.UtcNow;
         var products = context.Products.AsNoTracking();
         var ledger = context.InventoryTransactions.AsNoTracking();
         var posted = ledger.PostedInPeriod(products, period.FromUtc, period.ToExclusiveUtc);
+        var recentPosted = ledger.PostedInPeriod(products, snapshotAtUtc.AddDays(-30), snapshotAtUtc);
         var start = period.FromUtc ?? DateTime.MinValue;
         var end = period.ToExclusiveUtc ?? DateTime.MaxValue;
         if (await products.AnyAsync(p => p.CurrentQuantity !=
@@ -55,7 +57,9 @@ public sealed class InventoryAnalysisDataService(ApplicationDbContext context)
         var replenishment = await products.Where(p => p.IsActive).BelowMinimum()
             .OrderBy(p => p.CurrentQuantity == 0m ? 0 : 1).ThenBy(p => p.Code).ThenBy(p => p.Id)
             .Select(p => new ReplenishmentProduct(p.Code, p.Name, p.Unit,
-                p.CurrentQuantity, p.MinimumStockLevel)).ToListAsync(cancellationToken);
+                p.CurrentQuantity, p.MinimumStockLevel,
+                -(recentPosted.Where(t => t.ProductId == p.Id && t.TransactionType == InventoryTransactionType.Export)
+                    .Sum(t => (decimal?)t.QuantityChange) ?? 0m))).ToListAsync(cancellationToken);
         var low = await alerts.OrderBy(p => p.CurrentQuantity == 0m ? 0 : 1).ThenBy(p => p.Code).ThenBy(p => p.Id)
             .Select(p => new AnalysisProduct(p.Code, p.Name, p.Unit,
                 posted.Where(t => t.ProductId == p.Id && t.TransactionType == InventoryTransactionType.Import).Sum(t => (decimal?)t.QuantityChange) ?? 0m,
@@ -77,7 +81,7 @@ public sealed class InventoryAnalysisDataService(ApplicationDbContext context)
         if (imported == 0m && exported == 0m) limits.Add("Không có biến động số lượng nhập/xuất Posted trong kỳ; cần phân biệt biến động khác và tồn đầu/cuối, không suy ra toàn bộ sổ không có giao dịch.");
         var data = new InventoryAnalysisData
         {
-            SnapshotAtUtc = DateTime.UtcNow, FromUtc = period.FromUtc, ToExclusiveUtc = period.ToExclusiveUtc,
+            SnapshotAtUtc = snapshotAtUtc, FromUtc = period.FromUtc, ToExclusiveUtc = period.ToExclusiveUtc,
             ProductCount = await products.CountAsync(cancellationToken), ImportedQuantity = imported,
             ExportedQuantity = exported, OpeningQuantity = opening, ClosingQuantity = closing,
             CurrentQuantity = current, OtherChange = closing - opening - imported + exported,

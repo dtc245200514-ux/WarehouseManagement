@@ -38,7 +38,7 @@
                 <div class="col-12 col-lg-5">
                     <label asp-for="SearchTerm" class="form-label fw-semibold">Tìm kiếm</label>
                     <input asp-for="SearchTerm" class="form-control" maxlength="200"
-                           placeholder="Tên đăng nhập, email hoặc họ tên" />
+                           placeholder="Tên đăng nhập, thư điện tử hoặc họ tên" />
                     <span asp-validation-for="SearchTerm" class="text-danger small"></span>
                 </div>
                 <div class="col-12 col-md-6 col-lg-3">
@@ -47,7 +47,7 @@
                         <option value="">Tất cả vai trò</option>
                         @foreach (var availableRole in Model.AvailableRoles)
                         {
-                            <option value="@availableRole">@availableRole</option>
+                            <option value="@availableRole">@(availableRole switch { "ADMIN" => "Quản trị viên", "WAREHOUSE_STAFF" => "Nhân viên kho", "ACCOUNTANT" => "Kế toán", _ => availableRole })</option>
                         }
                     </select>
                     <span asp-validation-for="Role" class="text-danger small"></span>
@@ -116,7 +116,7 @@
                                             {
                                                 var roleBadge = roleName == "ADMIN" ? "text-bg-danger" :
                                                     roleName == "WAREHOUSE_STAFF" ? "text-bg-primary" : "text-bg-info";
-                                                <span class="badge @roleBadge">@roleName</span>
+                                                <span class="badge @roleBadge">@(roleName switch { "ADMIN" => "Quản trị viên", "WAREHOUSE_STAFF" => "Nhân viên kho", "ACCOUNTANT" => "Kế toán", _ => roleName })</span>
                                             }
                                         }
                                     </div>

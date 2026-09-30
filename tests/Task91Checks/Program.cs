@@ -98,6 +98,16 @@ var mock = new AiOptions { Provider = "Mock" };
 var mockResult = await Service(mock, mockHandler).AnalyzeAsync(sample, default);
 Check(mockResult.Success && mockResult.IsMock && mockResult.Text!.Contains("44.125") && mockResult.Text.Contains("29.375") && mockHandler.Count == 0, "Explicit mock uses supplied numbers without network");
 Check(!Service(mock, mockHandler, "Production").Configuration.IsReady, "Mock forbidden in Production");
+var recommendationFixture = sample with { ReplenishmentCandidates = [
+    new("LOW", "Low", "kg", 5, 10, 3.75m), new("ZERO", "Zero", "cái", 0, 10, 2m)] };
+var fixtureBefore = JsonSerializer.Serialize(recommendationFixture);
+var recommendationResult = await Service(mock, mockHandler).AnalyzeAsync(recommendationFixture, default);
+Check(recommendationResult.Success && recommendationResult.Text!.Contains("hết hàng") &&
+    recommendationResult.Text.Contains("dưới mức tối thiểu, còn tồn") && recommendationResult.Text.Contains("3.750"),
+    "Mock recommendation distinguishes zero stock and low stock with recent exports");
+Check(JsonSerializer.Serialize(recommendationFixture) == fixtureBefore && mockHandler.Count == 0,
+    "Recommendation leaves inventory input unchanged and invokes no external actions");
+Check(mockResult.Text!.Contains("không có mặt hàng dưới mức tồn tối thiểu"), "No candidates produces explicit empty recommendation");
 foreach (var invalid in new InventoryAnalysisData?[] { null, sample with { ProductCount = 0 }, sample with { ImportedQuantity = -1 }, sample with { ClosingQuantity = 100 }, sample with { FromUtc = DateTime.UtcNow, ToExclusiveUtc = DateTime.UtcNow.AddDays(-1) }, sample with { Limitations = [new string('x', 70000)] } })
 {
     var handler = new FakeHandler(Envelope("Không được gửi"));
@@ -167,9 +177,11 @@ if (args.Contains("--database"))
         Check(captured.RootElement.GetProperty("input").GetString() == InventoryAnalysisPrompt.Input(data), "Exact real SQL data sent into mocked provider request");
         if (pair.From is null && pair.To is null)
         {
-            Check(data.ImportedQuantity == 44.125m && data.ExportedQuantity == 14.750m && data.CurrentQuantity == 29.375m &&
-                data.ImportReceiptCount == 5 && data.ExportReceiptCount == 6 && data.AlertCount == 20 && data.OutOfStockCount == 12,
-                "Independent SQL snapshot totals/receipt counts/alerts");
+            Check(data.ProductCount == await db.Products.CountAsync() &&
+                data.CurrentQuantity == (await db.Products.SumAsync(p => (decimal?)p.CurrentQuantity) ?? 0m) &&
+                data.AlertCount == await db.Products.CountAsync(p => p.IsActive && p.CurrentQuantity <= p.MinimumStockLevel) &&
+                data.OutOfStockCount == await db.Products.CountAsync(p => p.IsActive && p.CurrentQuantity == 0m),
+                "Independent current SQL totals/alerts (no stale fixed database fixture)");
             Directory.CreateDirectory("bin/Task91Evidence");
             await File.WriteAllTextAsync("bin/Task91Evidence/analysis-input.json", JsonSerializer.Serialize(data, new JsonSerializerOptions { WriteIndented = true }));
         }

@@ -1,117 +1,117 @@
-﻿<!DOCTYPE html>
-<html lang="en">
+@{
+    var currentController = ViewContext.RouteData.Values["controller"]?.ToString();
+    var currentAction = ViewContext.RouteData.Values["action"]?.ToString();
+    bool IsCurrent(string controller, string action) => currentController == controller &&
+        (currentAction == action ||
+         (controller == "Inventory" && ((action == "Index" && currentAction == "Details") || (action == "Transactions" && currentAction == "TransactionDetails"))) ||
+         (action == "Index" && controller != "Home" && controller != "Inventory" && controller != "Reports"));
+}
+<!DOCTYPE html>
+<html lang="vi">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - WarehouseManagement</title>
+    <title>@ViewData["Title"] - Quản lý kho</title>
     <script type="importmap"></script>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/WarehouseManagement.styles.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
 </head>
-<body>
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">WarehouseManagement</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-                        </li>
-                        @if (User.IsInRole(WarehouseManagement.Authorization.ApplicationRoles.Admin) ||
-                            User.IsInRole(WarehouseManagement.Authorization.ApplicationRoles.WarehouseStaff) ||
-                            User.IsInRole(WarehouseManagement.Authorization.ApplicationRoles.Accountant))
-                        {
-                            <li class="nav-item">
-                                <a class="nav-link text-dark" asp-area="" asp-controller="CategoryManagement" asp-action="Index">Danh mục</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link text-dark" asp-area="" asp-controller="Inventory" asp-action="Index">Tồn kho</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link text-dark" asp-area="" asp-controller="Inventory" asp-action="Transactions">Lịch sử giao dịch</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link text-dark" asp-area="" asp-controller="Reports" asp-action="Dashboard">Dashboard</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link text-dark" asp-area="" asp-controller="Inventory" asp-action="LowStock">Cảnh báo tồn kho</a>
-                            </li>
-                        }
-                        @if (User.IsInRole(WarehouseManagement.Authorization.ApplicationRoles.Admin) ||
-                            User.IsInRole(WarehouseManagement.Authorization.ApplicationRoles.Accountant))
-                        {
-                            <li class="nav-item"><a class="nav-link text-dark" asp-area="" asp-controller="Reports" asp-action="Index">Báo cáo N–X–T</a></li>
-                            <li class="nav-item"><a class="nav-link text-dark" asp-area="" asp-controller="AiAnalysis" asp-action="Index">Phân tích AI</a></li>
-                        }
-                        @if (User.IsInRole(WarehouseManagement.Authorization.ApplicationRoles.Admin) ||
-                            User.IsInRole(WarehouseManagement.Authorization.ApplicationRoles.WarehouseStaff))
-                        {
-                            <li class="nav-item">
-                                <a class="nav-link text-dark" asp-area="" asp-controller="ProductManagement" asp-action="Index">Hàng hóa</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link text-dark" asp-area="" asp-controller="SupplierManagement" asp-action="Index">Nhà cung cấp</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link text-dark" asp-area="" asp-controller="ImportReceiptManagement" asp-action="Index">Phiếu nhập</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link text-dark" asp-area="" asp-controller="ExportReceiptManagement" asp-action="Index">Phiếu xuất</a>
-                            </li>
-                        }
-                        @if (User.IsInRole(WarehouseManagement.Authorization.ApplicationRoles.Admin))
-                        {
-                            <li class="nav-item">
-                                <a class="nav-link text-dark" asp-area="" asp-controller="UserManagement" asp-action="Index">Quản lý tài khoản</a>
-                            </li>
-                        }
-                    </ul>
-                    <ul class="navbar-nav align-items-sm-center">
-                        @if (User.Identity?.IsAuthenticated == true)
-                        {
-                            @if (!string.Equals(ViewContext.RouteData.Values["controller"]?.ToString(), "AiAnalysis", StringComparison.OrdinalIgnoreCase))
-                            {
-                            <li class="nav-item">
-                                <span class="nav-link text-dark">@User.Identity.Name</span>
-                            </li>
-                            }
-                            <li class="nav-item">
-                                <form asp-area="" asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
-                                    <button type="submit" class="btn btn-outline-danger btn-sm">Đăng xuất</button>
-                                </form>
-                            </li>
-                        }
-                        else
-                        {
-                            <li class="nav-item">
-                                <a class="btn btn-outline-primary btn-sm" asp-area="" asp-controller="Account" asp-action="Login">Đăng nhập</a>
-                            </li>
-                        }
-                    </ul>
-                </div>
+<body class="@(User.Identity?.IsAuthenticated == true ? "management-app" : "public-app")">
+    <a class="skip-link" href="#main-content">Đến nội dung chính</a>
+    @if (User.Identity?.IsAuthenticated == true)
+    {
+    <aside class="warehouse-sidebar" aria-label="Điều hướng chính">
+        <a class="warehouse-logo" asp-area="" asp-controller="Home" asp-action="Index" aria-label="Quản lý kho - Trang chủ"><span aria-hidden="true"><svg viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z" /></svg></span><small>QUẢN LÝ KHO<em>Hệ thống quản lý kho</em></small></a>
+        <button class="btn menu-toggle" type="button" data-bs-toggle="collapse" data-bs-target="#warehouse-menu" aria-controls="warehouse-menu" aria-expanded="false">☰ <span>Danh mục chức năng</span></button>
+        <nav id="warehouse-menu" class="collapse warehouse-menu">
+                    <ul class="sidebar-links">@if (User.IsInRole(WarehouseManagement.Authorization.ApplicationRoles.Admin) || User.IsInRole(WarehouseManagement.Authorization.ApplicationRoles.WarehouseStaff) || User.IsInRole(WarehouseManagement.Authorization.ApplicationRoles.Accountant)) {
+<li class="menu-heading">TỔNG QUAN</li>
+<li><a class="nav-link @(IsCurrent("Reports", "Dashboard") ? "active" : "")" aria-current="@(IsCurrent("Reports", "Dashboard") ? "page" : null)" asp-area="" asp-controller="Reports" asp-action="Dashboard"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 3v17h17M8 15v-4M13 15V7M18 15V4" /></svg></span><span>Tổng quan</span></a></li>
+}
+@if (User.IsInRole(WarehouseManagement.Authorization.ApplicationRoles.Admin) || User.IsInRole(WarehouseManagement.Authorization.ApplicationRoles.WarehouseStaff) || User.IsInRole(WarehouseManagement.Authorization.ApplicationRoles.Accountant)) {
+<li class="menu-heading">QUẢN LÝ</li>
+}
+@if (User.IsInRole(WarehouseManagement.Authorization.ApplicationRoles.Admin) || User.IsInRole(WarehouseManagement.Authorization.ApplicationRoles.WarehouseStaff)) {
+<li><a class="nav-link @(IsCurrent("ProductManagement", "Index") ? "active" : "")" aria-current="@(IsCurrent("ProductManagement", "Index") ? "page" : null)" asp-area="" asp-controller="ProductManagement" asp-action="Index"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 7 9-4 9 4-9 4zM3 7v10l9 4 9-4V7M12 11v10" /></svg></span><span>Hàng hóa</span></a></li>
+}
+@if (User.IsInRole(WarehouseManagement.Authorization.ApplicationRoles.Admin) || User.IsInRole(WarehouseManagement.Authorization.ApplicationRoles.WarehouseStaff) || User.IsInRole(WarehouseManagement.Authorization.ApplicationRoles.Accountant)) {
+<li><a class="nav-link @(IsCurrent("CategoryManagement", "Index") ? "active" : "")" aria-current="@(IsCurrent("CategoryManagement", "Index") ? "page" : null)" asp-area="" asp-controller="CategoryManagement" asp-action="Index"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z" /></svg></span><span>Danh mục</span></a></li>
+}
+@if (User.IsInRole(WarehouseManagement.Authorization.ApplicationRoles.Admin) || User.IsInRole(WarehouseManagement.Authorization.ApplicationRoles.WarehouseStaff)) {
+<li><a class="nav-link @(IsCurrent("SupplierManagement", "Index") ? "active" : "")" aria-current="@(IsCurrent("SupplierManagement", "Index") ? "page" : null)" asp-area="" asp-controller="SupplierManagement" asp-action="Index"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 21V7l8-4v18M12 10h8v11M2 21h20M7 9h2M7 13h2M7 17h2M15 13h2M15 17h2" /></svg></span><span>Nhà cung cấp</span></a></li>
+}
+@if (User.IsInRole(WarehouseManagement.Authorization.ApplicationRoles.Admin) || User.IsInRole(WarehouseManagement.Authorization.ApplicationRoles.WarehouseStaff) || User.IsInRole(WarehouseManagement.Authorization.ApplicationRoles.Accountant)) {
+<li class="menu-heading">KHO</li>
+}
+@if (User.IsInRole(WarehouseManagement.Authorization.ApplicationRoles.Admin) || User.IsInRole(WarehouseManagement.Authorization.ApplicationRoles.WarehouseStaff)) {
+<li><a class="nav-link @(IsCurrent("ImportReceiptManagement", "Index") ? "active" : "")" aria-current="@(IsCurrent("ImportReceiptManagement", "Index") ? "page" : null)" asp-area="" asp-controller="ImportReceiptManagement" asp-action="Index"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m-5-5 5 5 5-5M4 16v5h16v-5" /></svg></span><span>Nhập kho</span></a></li>
+<li><a class="nav-link @(IsCurrent("ExportReceiptManagement", "Index") ? "active" : "")" aria-current="@(IsCurrent("ExportReceiptManagement", "Index") ? "page" : null)" asp-area="" asp-controller="ExportReceiptManagement" asp-action="Index"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4m-5 5 5-5 5 5M4 16v5h16v-5" /></svg></span><span>Xuất kho</span></a></li>
+}
+@if (User.IsInRole(WarehouseManagement.Authorization.ApplicationRoles.Admin) || User.IsInRole(WarehouseManagement.Authorization.ApplicationRoles.WarehouseStaff) || User.IsInRole(WarehouseManagement.Authorization.ApplicationRoles.Accountant)) {
+<li><a class="nav-link @(IsCurrent("Inventory", "Index") ? "active" : "")" aria-current="@(IsCurrent("Inventory", "Index") ? "page" : null)" asp-area="" asp-controller="Inventory" asp-action="Index"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h16v16H4zM8 8h8M8 12h8M8 16h5" /></svg></span><span>Tồn kho</span></a></li>
+<li><a class="nav-link @(IsCurrent("Inventory", "Transactions") ? "active" : "")" aria-current="@(IsCurrent("Inventory", "Transactions") ? "page" : null)" asp-area="" asp-controller="Inventory" asp-action="Transactions"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h16v16H4zM8 8h8M8 12h8M8 16h5" /></svg></span><span>Lịch sử giao dịch</span></a></li>
+}
+@if (User.IsInRole(WarehouseManagement.Authorization.ApplicationRoles.Admin) || User.IsInRole(WarehouseManagement.Authorization.ApplicationRoles.WarehouseStaff) || User.IsInRole(WarehouseManagement.Authorization.ApplicationRoles.Accountant)) {
+<li class="menu-heading">PHÂN TÍCH</li>
+}
+@if (User.IsInRole(WarehouseManagement.Authorization.ApplicationRoles.Admin) || User.IsInRole(WarehouseManagement.Authorization.ApplicationRoles.Accountant)) {
+<li><a class="nav-link @(IsCurrent("Reports", "Index") ? "active" : "")" aria-current="@(IsCurrent("Reports", "Index") ? "page" : null)" asp-area="" asp-controller="Reports" asp-action="Index"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 3v17h17M8 15v-4M13 15V7M18 15V4" /></svg></span><span>Thống kê và báo cáo</span></a></li>
+}
+@if (User.IsInRole(WarehouseManagement.Authorization.ApplicationRoles.Admin) || User.IsInRole(WarehouseManagement.Authorization.ApplicationRoles.WarehouseStaff) || User.IsInRole(WarehouseManagement.Authorization.ApplicationRoles.Accountant)) {
+<li><a class="nav-link @(IsCurrent("Inventory", "LowStock") ? "active" : "")" aria-current="@(IsCurrent("Inventory", "LowStock") ? "page" : null)" asp-area="" asp-controller="Inventory" asp-action="LowStock"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h16v16H4zM8 8h8M8 12h8M8 16h5" /></svg></span><span>Cảnh báo tồn kho</span></a></li>
+}
+@if (User.IsInRole(WarehouseManagement.Authorization.ApplicationRoles.Admin) || User.IsInRole(WarehouseManagement.Authorization.ApplicationRoles.Accountant)) {
+<li><a class="nav-link @(IsCurrent("AiAnalysis", "Index") ? "active" : "")" aria-current="@(IsCurrent("AiAnalysis", "Index") ? "page" : null)" asp-area="" asp-controller="AiAnalysis" asp-action="Index"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3 3 6 6 3-6 3-3 6-3-6-6-3 6-3z" /></svg></span><span>Phân tích kho bằng AI</span></a></li>
+}
+<li class="menu-heading">HỆ THỐNG</li>
+@if (User.IsInRole(WarehouseManagement.Authorization.ApplicationRoles.Admin)) {
+<li><a class="nav-link @(IsCurrent("UserManagement", "Index") ? "active" : "")" aria-current="@(IsCurrent("UserManagement", "Index") ? "page" : null)" asp-area="" asp-controller="UserManagement" asp-action="Index"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6a4 4 0 1 0 8 0 4 4 0 1 0-8 0M4 21v-3a8 8 0 0 1 16 0v3" /></svg></span><span>Quản lý tài khoản</span></a></li>
+}
+<li><button class="nav-link" type="button" data-bs-toggle="modal" data-bs-target="#account-information"><span class="nav-icon" aria-hidden="true">◎</span><span>Thông tin tài khoản</span></button></li></ul>
+
+            <div class="sidebar-account">
+                @if (User.Identity?.IsAuthenticated == true)
+                {
+                    <form asp-area="" asp-controller="Account" asp-action="Logout" method="post">
+                        <button type="submit" class="sidebar-logout"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 4H4v16h5M9 12h12m-5-5 5 5-5 5" /></svg></span>Đăng xuất</button>
+                    </form>
+                }
+                else
+                {
+                    <a class="nav-link" asp-area="" asp-controller="Account" asp-action="Login">Đăng nhập</a>
+                }
             </div>
         </nav>
-    </header>
-    <div class="container">
-        <main role="main" class="pb-3">
-            @RenderBody()
-        </main>
+    </aside>
+    <div class="modal fade" id="account-information" tabindex="-1" aria-labelledby="account-title" aria-hidden="true"><div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-header"><h2 class="modal-title fs-5" id="account-title">Thông tin tài khoản</h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button></div><div class="modal-body"><p class="text-muted">Tên đăng nhập</p><strong>@User.Identity?.Name</strong></div></div></div></div>
+    }
+    else
+    {
+        <header class="public-header"><a class="public-brand" asp-controller="Home" asp-action="Index">QUẢN LÝ KHO</a><span class="public-tagline">Vận hành rõ ràng. Quản lý hiệu quả.</span><div class="public-actions"><a class="btn btn-outline-primary" asp-controller="Account" asp-action="Login">Đăng nhập</a><button class="btn btn-primary" type="button" data-bs-toggle="modal" data-bs-target="#registration-information">Tạo tài khoản</button></div></header>
+        <div class="modal fade" id="registration-information" tabindex="-1" aria-labelledby="registration-title" aria-hidden="true"><div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-header"><h2 class="modal-title fs-5" id="registration-title">Tạo tài khoản</h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button></div><div class="modal-body"><p>Hệ thống hiện chưa hỗ trợ đăng ký tài khoản công khai. Vui lòng liên hệ quản trị viên để được cấp tài khoản và quyền truy cập phù hợp.</p><a class="btn btn-outline-primary" asp-controller="Account" asp-action="Login">Đã có tài khoản? Đăng nhập</a></div></div></div></div>
+    }
+    <div class="warehouse-shell">
+        @if (User.Identity?.IsAuthenticated == true)
+        {
+        <header class="warehouse-header">
+            <div><span class="system-name">HỆ THỐNG QUẢN LÝ KHO</span><span class="header-divider" aria-hidden="true"> / </span><span class="screen-name">@ViewData["Title"]</span></div>
+            @if (User.Identity?.IsAuthenticated == true)
+            {
+                @if (!string.Equals(currentController, "AiAnalysis", StringComparison.OrdinalIgnoreCase))
+                {
+                    <details class="user-menu"><summary><span class="user-avatar" aria-hidden="true"><svg viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6a4 4 0 1 0 8 0 4 4 0 1 0-8 0M4 21v-3a8 8 0 0 1 16 0v3" /></svg></span><span>@User.Identity?.Name</span></summary><div class="user-information"><strong>Thông tin tài khoản</strong><p class="mb-0 mt-2">@User.Identity?.Name</p></div></details>
+                }
+            }
+            else
+            {
+                <span class="header-account">Khu vực đăng nhập</span>
+            }
+        </header>
+        }
+        <main id="main-content" class="warehouse-content" tabindex="-1">@RenderBody()</main>
+        <footer class="warehouse-footer">© 2026 · Hệ thống quản lý kho <a asp-area="" asp-controller="Home" asp-action="Privacy">Thông tin</a></footer>
     </div>
-
-    <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2026 - WarehouseManagement - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-        </div>
-    </footer>
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>

@@ -1,5 +1,7 @@
 # Task 9.2-B — trạng thái ngày 29/09/2026
 
+> Kết quả mới ngày 30/09/2026: xem [kiểm chứng Task 9.2-B](TASK-9.2-B-verification-2026-09-30.md). Nội dung dưới đây là bằng chứng lịch sử, không phải số liệu của lượt mới nhất.
+
 **Task 9.2-B: CHƯA ĐẠT nghiệm thu cuối.** Chức năng và kiểm thử nội bộ đã đạt; còn kiểm chứng báo cáo đề xuất Gemini thật. Không triển khai lại.
 
 ## Đã xác nhận

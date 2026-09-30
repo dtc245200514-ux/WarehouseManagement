@@ -87,7 +87,7 @@
                         <dt class="col-sm-4">Tên đăng nhập</dt>
                         <dd class="col-sm-8"><span class="font-monospace">@Model.UserName</span></dd>
 
-                        <dt class="col-sm-4">Email</dt>
+                        <dt class="col-sm-4">Thư điện tử</dt>
                         <dd class="col-sm-8">@Model.Email</dd>
 
                         <dt class="col-sm-4">Vai trò</dt>
@@ -100,7 +100,7 @@
                             {
                                 @foreach (var roleName in Model.Roles)
                                 {
-                                    <span class="badge text-bg-primary me-1">@roleName</span>
+                                    <span class="badge text-bg-primary me-1">@(roleName switch { "ADMIN" => "Quản trị viên", "WAREHOUSE_STAFF" => "Nhân viên kho", "ACCOUNTANT" => "Kế toán", _ => roleName })</span>
                                 }
                             }
                         </dd>

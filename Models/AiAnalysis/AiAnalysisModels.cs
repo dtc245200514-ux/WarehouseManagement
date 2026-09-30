@@ -37,7 +37,8 @@ public sealed record AnalysisProduct(string Code, string Name, string Unit, deci
 
 public sealed record AnalysisUnit(string Unit, decimal CurrentQuantity);
 
-public sealed record ReplenishmentProduct(string Code, string Name, string Unit, decimal CurrentQuantity, decimal MinimumStockLevel)
+public sealed record ReplenishmentProduct(string Code, string Name, string Unit, decimal CurrentQuantity, decimal MinimumStockLevel,
+    decimal RecentExportedQuantity = 0m)
 {
     public decimal MinimumShortfall => Math.Max(0m, MinimumStockLevel - CurrentQuantity);
 }
@@ -45,6 +46,8 @@ public sealed record ReplenishmentProduct(string Code, string Name, string Unit,
 public sealed record InventoryAnalysisData
 {
     public required DateTime SnapshotAtUtc { get; init; }
+    public DateTime RecentExportFromUtc => SnapshotAtUtc.AddDays(-30);
+    public DateTime RecentExportToExclusiveUtc => SnapshotAtUtc;
     public DateTime? FromUtc { get; init; }
     public DateTime? ToExclusiveUtc { get; init; }
     public int ProductCount { get; init; }

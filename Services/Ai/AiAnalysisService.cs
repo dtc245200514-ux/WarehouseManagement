@@ -171,6 +171,7 @@ public sealed class AiAnalysisService(HttpClient client, IOptions<AiOptions> opt
             5. Hàng hóa cần chú ý: {data.AlertCount} hàng đang hoạt động được cảnh báo, gồm {data.OutOfStockCount} hàng hết.
             6. Nhận xét tham khảo và giới hạn: Đây là mẫu diễn giải xác định để kiểm thử luồng ứng dụng, không đánh giá chất lượng của mô hình AI.
             7. Đề xuất nhập thêm hàng: {(data.BelowMinimumCount == 0 ? "Hiện không có mặt hàng dưới mức tồn tối thiểu theo dữ liệu hệ thống." : $"Có {data.BelowMinimumCount} mã cần xem xét nhập thêm, gồm {data.ReplenishmentOutOfStockCount} mã hết tồn; xem danh sách chính thức trên trang.")} Đây là đề xuất hỗ trợ; không tự động tạo phiếu nhập hoặc thay đổi tồn kho. Chênh lệch không phải số lượng phải nhập.
+            {string.Join("\n", data.ReplenishmentSample.Take(3).Select(p => $"{p.Code} — {p.Name}: {(p.CurrentQuantity == 0m ? "hết hàng" : "dưới mức tối thiểu, còn tồn")}; tồn hiện tại {N(p.CurrentQuantity)}, tối thiểu {N(p.MinimumStockLevel)}, xuất 30 ngày {N(p.RecentExportedQuantity)} {p.Unit}. Cần xem xét nhập thêm do tồn hiện tại thấp hơn mức tối thiểu."))}
             {string.Join("\n", data.Limitations)}
             """;
         return new(text, null, true);

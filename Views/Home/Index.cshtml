@@ -1,8 +1,16 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
-}
-
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
-</div>
+@{ ViewData["Title"] = "Trang chủ"; }
+<section class="landing-hero">
+    <div class="hero-copy"><span class="eyebrow">VẬN HÀNH KHO HÀNG HIỆN ĐẠI</span><h1>Quản lý kho thông minh, chính xác và hiệu quả</h1><p>Theo dõi hàng hóa, kiểm soát nhập – xuất – tồn và nắm bắt tình hình kho trong một không gian làm việc rõ ràng, dễ sử dụng.</p>
+    @if (User.Identity?.IsAuthenticated != true) {
+        <div class="hero-actions"><a class="btn btn-primary" asp-controller="Account" asp-action="Login">Đăng nhập hệ thống <span aria-hidden="true">→</span></a><button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#registration-information">Tạo tài khoản</button></div>
+        <p class="hero-note">Tài khoản và quyền truy cập do quản trị viên cấp.</p>
+    } else { <p class="hero-note">Chọn chức năng trong thanh điều hướng để bắt đầu làm việc.</p> }
+    </div>
+    <div class="hero-art"><img src="~/images/warehouse-overview.svg" alt="Minh họa kho hàng hiện đại với kệ lưu trữ, kiện hàng và màn hình quản lý" width="640" height="480" /><span class="illustration-caption">Không gian quản lý kho tập trung</span></div>
+</section>
+<section class="feature-section" aria-labelledby="feature-title"><div class="section-heading"><span class="eyebrow">MỌI THÔNG TIN, MỘT NƠI QUẢN LÝ</span><h2 id="feature-title">Hỗ trợ từng bước vận hành</h2><p>Từ danh mục hàng hóa đến báo cáo và phân tích kho.</p></div><div class="feature-grid">
+<article class="card feature-card"><span aria-hidden="true">◇</span><h3>Quản lý hàng hóa</h3><p>Tra cứu hàng hóa, danh mục và nhà cung cấp một cách thuận tiện.</p></article>
+<article class="card feature-card"><span aria-hidden="true">⇄</span><h3>Theo dõi nhập – xuất – tồn</h3><p>Theo dõi chứng từ, số lượng tồn và lịch sử giao dịch rõ ràng.</p></article>
+<article class="card feature-card"><span aria-hidden="true">△</span><h3>Cảnh báo tồn kho</h3><p>Nhận biết các mặt hàng cần theo dõi theo mức tồn hiện có.</p></article>
+<article class="card feature-card"><span aria-hidden="true">✧</span><h3>Phân tích kho bằng AI</h3><p>Tham khảo phân tích và đề xuất bên cạnh số liệu chính thức của hệ thống.</p></article>
+</div></section>

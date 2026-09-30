@@ -1,18 +1,18 @@
 @using WarehouseManagement.Authorization
 @model WarehouseManagement.Models.Reporting.WarehouseDashboardViewModel
 @{
-    ViewData["Title"] = "Dashboard kho";
+    ViewData["Title"] = "Tổng quan kho";
     ViewData["FilterAction"] = "Dashboard";
     var maximum = Model.Timeline.SelectMany(x => new[] { x.ImportedQuantity, x.ExportedQuantity }).DefaultIfEmpty(0m).Max();
 }
-<div class="warehouse-reports">
+<div class="warehouse-reports dashboard-page">
     <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
-        <div><h1 class="h3 mb-1">Dashboard quản lý kho</h1><p class="text-muted mb-0">Số liệu thực từ phiếu đã ghi sổ. Thời gian giao dịch và bộ lọc ngày theo UTC.</p></div>
+        <div><h1 class="h3 mb-1">Tổng quan kho</h1><p class="text-muted mb-0">Số liệu thực từ phiếu đã ghi sổ. Thời gian giao dịch và bộ lọc ngày theo UTC.</p></div>
         @if (User.IsInRole(ApplicationRoles.Admin) || User.IsInRole(ApplicationRoles.Accountant))
         { <a asp-action="Index" class="btn btn-outline-primary">Báo cáo nhập–xuất–tồn</a> }
     </div>
     <partial name="_Filters" model="Model.Filter" />
-    <div class="row g-3 mb-4">
+    <div class="row g-3 mb-4 dashboard-metrics">
         <div class="col-lg-4 col-md-6"><div class="card h-100 border-0 shadow-sm"><div class="card-body"><div class="text-muted">Hàng hóa đang hoạt động phù hợp</div><div class="h3 mb-0">@Model.ActiveProductCount</div></div></div></div>
         <div class="col-lg-4 col-md-6"><div class="card h-100 border-0 shadow-sm"><div class="card-body"><div class="text-muted">Tổng danh mục hệ thống</div><div class="h3 mb-0">@Model.CategoryCount</div></div></div></div>
         <div class="col-lg-4 col-md-6"><div class="card h-100 border-0 shadow-sm"><div class="card-body"><div class="text-muted">Tồn hiện tại của hàng hóa phù hợp</div><div class="h3 mb-0">@Model.CurrentQuantity.ToString("N3")</div></div></div></div>

@@ -30,7 +30,7 @@
                         <span asp-validation-for="UserName" class="text-danger small"></span>
                     </div>
                     <div class="col-12 col-lg-6">
-                        <label asp-for="Email" class="form-label fw-semibold"></label>
+                        <label asp-for="Email" class="form-label fw-semibold">Thư điện tử</label>
                         <input asp-for="Email" class="form-control" autocomplete="email" />
                         <span asp-validation-for="Email" class="text-danger small"></span>
                     </div>
@@ -40,7 +40,7 @@
                             <option value="">Chọn vai trò</option>
                             @foreach (var roleName in Model.AvailableRoles)
                             {
-                                <option value="@roleName">@roleName</option>
+                                <option value="@roleName">@(roleName switch { "ADMIN" => "Quản trị viên", "WAREHOUSE_STAFF" => "Nhân viên kho", "ACCOUNTANT" => "Kế toán", _ => roleName })</option>
                             }
                         </select>
                         <span asp-validation-for="Role" class="text-danger small"></span>
